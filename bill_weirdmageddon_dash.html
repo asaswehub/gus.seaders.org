@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bill's Weirdmageddon Dash</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#111; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; margin:0; text-align:center; }
+  h1 { font-weight:600; margin:16px 0 6px; }
+  canvas { background:#c0392b; display:block; margin:16px auto 24px; border:2px solid #f1c40f; }
+  .hint { opacity:.8; font-size:14px; margin-bottom:18px; }
+  #score-display { font-size: 24px; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Bill's Weirdmageddon Dash</h1>
+<div id="score-display">Score: <span id="score">0</span> | High Score: <span id="high-score">0</span></div>
+<div class="hint">Move: Arrow Keys or WASD. Dodge the trees!</div>
+<canvas id="gameCanvas" width="800" height="480" aria-label="Game canvas"></canvas>
+<script>
+'use strict';
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const highScoreEl = document.getElementById('high-score');
+
+// --- Game Configuration ---
+const PLAYER_SPEED = 5;
+const OBSTACLE_SPEED = 4;
+const OBSTACLE_SPAWN_RATE = 120; // Lower is faster
+const NUM_STARS = 100;
+
+// --- Game State ---
+let player, obstacles, keys, score, frameCount, gameOver, highScore, stars;
+
+function initGame(){
+  player = { 
+    x: 100, 
+    y: canvas.height / 2, 
+    width: 50, 
+    height: 45, 
+    dy: 0
+  };
+  obstacles = [];
+  keys = Object.create(null);
+  score = 0;
+  frameCount = 0;
+  gameOver = false;
+
+  // --- NEW: Initialize stars ---
+  stars = [];
+  for (let i = 0; i < NUM_STARS; i++) {
+      stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 2 + 1,
+          speed: Math.random() * 1.5 + 0.5 // Different speeds for parallax effect
+      });
+  }
+
+  // Load high score from localStorage
+  highScore = localStorage.getItem('billDashHighScore') || 0;
+  highScoreEl.textContent = highScore;
+  loop(); // Start the loop
+}
+
+// --- Drawing ---
+function drawPlayer() {
+    // Bill Cipher
+    ctx.fillStyle = '#f1c40f'; // Yellow
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y + player.height);
+    ctx.lineTo(player.x + player.width / 2, player.y);
+    ctx.lineTo(player.x + player.width, player.y + player.height);
+    ctx.closePath();
+    ctx.fill();
+
+    // Eye
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'black';
+    ctx.beginPath();
+    ctx.arc(player.x + player.width / 2, player.y + player.height / 2, 5, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawObstacles() {
+    obstacles.forEach(o => {
+        ctx.fillStyle = '#16a085'; // Dark green
+        ctx.beginPath();
+        ctx.moveTo(o.x, o.y + o.height);
+        ctx.lineTo(o.x + o.width / 2, o.y);
+        ctx.lineTo(o.x + o.width, o.y + o.height);
+        ctx.closePath();
+        ctx.fill();
+    });
+}
+
+function drawStars() {
+    ctx.fillStyle = 'white';
+    stars.forEach(star => {
+        ctx.globalAlpha = star.speed / 2; // Fainter stars move slower
+        ctx.fillRect(star.x, star.y, star.size, star.size);
+    });
+    ctx.globalAlpha = 1.0; // Reset alpha
+}
+// --- Updates ---
+function updatePlayer() {
+    player.dy = (keys['ArrowDown'] || keys['KeyS'] ? PLAYER_SPEED : 0) - (keys['ArrowUp'] || keys['KeyW'] ? PLAYER_SPEED : 0);
+    player.y += player.dy;
+
+    // Clamp player to screen
+    player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+}
+
+function updateObstacles() {
+    frameCount++;
+    if (frameCount % OBSTACLE_SPAWN_RATE === 0) {
+        const height = Math.random() * 100 + 50;
+        const y = Math.random() > 0.5 ? 0 : canvas.height - height; // Top or bottom
+        obstacles.push({ x: canvas.width, y: y, width: 40, height: height });
+    }
+
+    obstacles.forEach(o => {
+        o.x -= OBSTACLE_SPEED;
+        // Collision check
+        if (player.x < o.x + o.width &&
+            player.x + player.width > o.x &&
+            player.y < o.y + o.height &&
+            player.y + player.height > o.y) {
+            gameOver = true;
+        }
+    });
+
+    // Remove off-screen obstacles
+    obstacles = obstacles.filter(o => o.x + o.width > 0);
+}
+
+function updateScore() {
+    score++;
+    scoreEl.textContent = score;
+}
+
+function updateStars() {
+    stars.forEach(star => {
+        star.x -= star.speed;
+        if (star.x + star.size < 0) {
+            star.x = canvas.width;
+            star.y = Math.random() * canvas.height;
+            star.size = Math.random() * 2 + 1;
+            star.speed = Math.random() * 1.5 + 0.5;
+        }
+    });
+}
+// --- Controls ---
+addEventListener('keydown', e => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+    keys[e.code] = true;
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+// --- Main Loop ---
+function loop() {
+    if (gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = '48px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+
+        // Check for and save new high score
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('billDashHighScore', highScore);
+        }
+
+        ctx.font = '24px sans-serif';
+        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 50);
+        ctx.fillText(`High Score: ${highScore}`, canvas.width / 2, canvas.height / 2 + 80);
+        ctx.fillText('Reload to play again', canvas.width / 2, canvas.height / 2 + 120);
+        return; // Stop the loop
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    drawStars();
+    drawObstacles();
+    drawPlayer();
+
+    updatePlayer();
+    updateObstacles();
+    updateScore();
+    updateStars();
+
+    requestAnimationFrame(loop);
+}
+
+initGame();
+</script>
+</body>
+</html>
