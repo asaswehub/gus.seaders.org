@@ -27,7 +27,6 @@ const highScoreEl = document.getElementById('high-score');
 
 // --- Game Configuration ---
 const PLAYER_SPEED = 5;
-const OBSTACLE_SPEED = 4;
 const OBSTACLE_SPAWN_RATE = 120; // Lower is faster
 const NUM_STARS = 100;
 
@@ -121,11 +120,12 @@ function updateObstacles() {
     if (frameCount % OBSTACLE_SPAWN_RATE === 0) {
         const height = Math.random() * 100 + 50;
         const y = Math.random() > 0.5 ? 0 : canvas.height - height; // Top or bottom
-        obstacles.push({ x: canvas.width, y: y, width: 40, height: height });
+        const speed = Math.random() * 3 + 3; // Random speed between 3 and 6
+        obstacles.push({ x: canvas.width, y: y, width: 40, height: height, speed: speed });
     }
 
     obstacles.forEach(o => {
-        o.x -= OBSTACLE_SPEED;
+        o.x -= o.speed; // Use the obstacle's individual speed
         // Collision check
         if (player.x < o.x + o.width &&
             player.x + player.width > o.x &&

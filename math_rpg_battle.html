@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Math RPG: Monster Battle</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#1a1a1a; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; margin:0; text-align:center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+  #game-wrapper { display: flex; flex-direction: column; align-items: center; }
+  canvas { background:#3d2a42; display:block; border:2px solid #555; image-rendering: pixelated; image-rendering: crisp-edges; }
+  #ui-panel { background: #2c3e50; width: 800px; padding: 1rem; border: 2px solid #555; border-top: none; box-sizing: border-box; }
+  #problem-text { font-size: 32px; font-weight: bold; }
+  #answer-input { font-size: 28px; width: 120px; text-align: center; margin: 0 10px; }
+  #attack-button { font-size: 28px; padding: 5px 15px; cursor: pointer; }
+  #message-log { margin-top: 10px; height: 24px; font-size: 18px; color: #f1c40f; }
+  #game-over-screen { display: none; position: absolute; background: rgba(0,0,0,0.8); width: 100%; height: 100%; top: 0; left: 0; flex-direction: column; align-items: center; justify-content: center; }
+  #restart-button { font-size: 24px; padding: 10px 20px; margin-top: 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <h1>Math RPG: Monster Battle</h1>
+    <canvas id="gameCanvas" width="800" height="400" aria-label="Game canvas"></canvas>
+    <div id="ui-panel">
+        <form id="answer-form">
+            <span id="problem-text"></span>
+            <input type="number" id="answer-input" autocomplete="off" required>
+            <button type="submit" id="attack-button">Attack!</button>
+        </form>
+        <div id="message-log">A wild demon appears!</div>
+    </div>
+</div>
+
+<div id="game-over-screen">
+    <h2 id="end-message"></h2>
+    <button id="restart-button">Play Again</button>
+</div>
+
+<script>
+'use strict';
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// UI Elements
+const problemTextEl = document.getElementById('problem-text');
+const answerForm = document.getElementById('answer-form');
+const answerInput = document.getElementById('answer-input');
+const messageLogEl = document.getElementById('message-log');
+const gameOverScreen = document.getElementById('game-over-screen');
+const endMessageEl = document.getElementById('end-message');
+const restartButton = document.getElementById('restart-button');
+
+// Game State
+let player, enemy, currentAnswer;
+
+function initGame() {
+    player = { x: 150, y: 250, width: 50, height: 80, hp: 100, maxHp: 100, attack: 25 };
+    enemy = { x: 600, y: 230, width: 80, height: 100, hp: 150, maxHp: 150, attack: 10 };
+    
+    gameOverScreen.style.display = 'none';
+    answerInput.disabled = false;
+    document.getElementById('attack-button').disabled = false;
+    
+    generateNewProblem();
+    requestAnimationFrame(draw);
+}
+
+function generateNewProblem() {
+    const num1 = Math.floor(Math.random() * 12) + 1;
+    const num2 = Math.floor(Math.random() * 12) + 1;
+    currentAnswer = num1 + num2;
+    problemTextEl.textContent = `${num1} + ${num2} =`;
+    answerInput.value = '';
+    answerInput.focus();
+}
+
+function drawHealthBar(x, y, width, height, currentHp, maxHp, color) {
+    ctx.fillStyle = '#333';
+    ctx.fillRect(x, y, width, height);
+    const hpWidth = (currentHp / maxHp) * width;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, hpWidth, height);
+    ctx.strokeStyle = 'white';
+    ctx.strokeRect(x, y, width, height);
+}
+
+function drawPlayer() {
+    // Simple wizard character
+    ctx.fillStyle = '#7e22ce'; // Robe
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    ctx.fillStyle = '#f2d4a9'; // Face
+    ctx.fillRect(player.x + 10, player.y + 5, player.width - 20, 20);
+}
+
+function drawEnemy() {
+    // Simple demon character
+    ctx.fillStyle = '#be123c'; // Body
+    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+    ctx.fillStyle = 'black'; // Horns
+    ctx.fillRect(enemy.x, enemy.y, 20, 20);
+    ctx.fillRect(enemy.x + enemy.width - 20, enemy.y, 20, 20);
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Ground
+    ctx.fillStyle = '#27ae60';
+    ctx.fillRect(0, 330, canvas.width, 70);
+
+    drawPlayer();
+    drawEnemy();
+
+    // Health Bars
+    drawHealthBar(player.x, player.y - 20, player.width, 10, player.hp, player.maxHp, 'green');
+    drawHealthBar(enemy.x, enemy.y - 20, enemy.width, 10, enemy.hp, enemy.maxHp, 'red');
+
+    // HP Text
+    ctx.fillStyle = 'white';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(`HP: ${player.hp}/${player.maxHp}`, player.x, player.y - 25);
+    ctx.fillText(`HP: ${enemy.hp}/${enemy.maxHp}`, enemy.x, enemy.y - 25);
+}
+
+function handleAnswer(e) {
+    e.preventDefault();
+    const userAnswer = parseInt(answerInput.value, 10);
+
+    if (userAnswer === currentAnswer) {
+        // Player attacks
+        enemy.hp = Math.max(0, enemy.hp - player.attack);
+        messageLogEl.textContent = `Correct! You dealt ${player.attack} damage.`;
+        if (enemy.hp <= 0) {
+            endBattle(true); // Player won
+            return;
+        }
+    } else {
+        // Enemy attacks
+        player.hp = Math.max(0, player.hp - enemy.attack);
+        messageLogEl.textContent = `Incorrect! The demon dealt ${enemy.attack} damage.`;
+        if (player.hp <= 0) {
+            endBattle(false); // Player lost
+            return;
+        }
+    }
+    
+    generateNewProblem();
+    draw(); // Redraw immediately to show HP changes
+}
+
+function endBattle(playerWon) {
+    answerInput.disabled = true;
+    document.getElementById('attack-button').disabled = true;
+    
+    if (playerWon) {
+        endMessageEl.textContent = "You are victorious!";
+        messageLogEl.textContent = "The demon has been defeated!";
+    } else {
+        endMessageEl.textContent = "You have been defeated!";
+        messageLogEl.textContent = "The world is shrouded in darkness...";
+    }
+    
+    draw();
+    gameOverScreen.style.display = 'flex';
+}
+
+answerForm.addEventListener('submit', handleAnswer);
+restartButton.addEventListener('click', initGame);
+
+initGame();
+
+</script>
+</body>
+</html>
