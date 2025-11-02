@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dragon Fire Quest</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#222; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; margin:0; text-align:center; }
+  h1 { font-weight:600; margin:16px 0 6px; }
+  #ui { font-size:18px; margin-bottom:10px; }
+  canvas { background:#2c3e50; display:block; margin:16px auto 24px; border:2px solid #c0392b; }
+  .hint { opacity:.8; font-size:14px; margin-bottom:18px; }
+  #loading { font-size: 24px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<h1>Dragon Fire Quest</h1>
+<div id="ui">Health: <span id="health">100</span> | Score: <span id="score">0</span> | Inventory: <span id="inventory">None</span></div>
+<div class="hint">Move: Arrow Keys or WASD. Shoot: Space. Reload page to restart.</div>
+<div id="loading">Loading Assets...</div>
+<canvas id="gameCanvas" width="800" height="600" aria-label="Game canvas" style="display: none;"></canvas>
+<script>
+'use strict';
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+
+// UI elements
+const uiHealth = document.getElementById('health');
+const uiScore = document.getElementById('score');
+const uiInventory = document.getElementById('inventory');
+const loadingText = document.getElementById('loading');
+
+// --- NEW: Image Asset Loading ---
+const assets = {};
+const assetUrls = {
+    player: 'https://placehold.co/100x100/f39c12/FFFFFF?text=Orange\\nDragon', // Replace with 'img/orange-dragon.png'
+    enemy: 'https://placehold.co/100x100/3498db/FFFFFF?text=Blue\\nDragon',   // Replace with 'img/blue-dragon.png'
+    item: 'https://placehold.co/100x100/f1c40f/FFFFFF?text=Chalice'       // Replace with 'img/chalice.png'
+};
+let assetsLoaded = 0;
+const totalAssets = Object.keys(assetUrls).length;
+
+Object.keys(assetUrls).forEach(key => {
+    assets[key] = new Image();
+    assets[key].src = assetUrls[key];
+    assets[key].onload = () => {
+        assetsLoaded++;
+        if (assetsLoaded === totalAssets) {
+            // All assets are loaded, start the game
+            loadingText.style.display = 'none';
+            canvas.style.display = 'block';
+            initGame();
+            requestAnimationFrame(loop);
+        }
+    };
+});
+
+// State
+let player, enemies, projectiles, treasureItem, keys;
+
+function initGame(){
+  player = { x:100, y:100, size:50, speed:4, health:100, score:0, inventory:[], dx:0, dy:0, attackCooldown:0, damageCooldown:0 };
+  enemies = [
+    { x:400, y:150, size:50, dx:-1, dy:0, health:3 },
+    { x:600, y:400, size:50, dx:0,  dy:1, health:3 }
+  ];
+  projectiles = [];
+  treasureItem = { x:700, y:100, size:40, pickedUp:false };
+  keys = Object.create(null);
+  updateUI();
+}
+
+// --- UPDATED: Drawing Functions ---
+function drawPlayer(){ ctx.drawImage(assets.player, player.x, player.y, player.size, player.size); }
+function drawEnemies(){
+  enemies.forEach(e=>{
+    ctx.drawImage(assets.enemy, e.x, e.y, e.size, e.size);
+    // health bar
+    ctx.fillStyle = '#555'; ctx.fillRect(e.x, e.y-10, e.size, 5);
+    ctx.fillStyle = '#3498db'; ctx.fillRect(e.x, e.y-10, (Math.max(e.health,0)/3)*e.size, 5);
+  });
+}
+function drawTreasure(){ if(!treasureItem.pickedUp){ ctx.drawImage(assets.item, treasureItem.x, treasureItem.y, treasureItem.size, treasureItem.size);} }
+function drawProjectiles(){
+  // Draw fireballs
+  projectiles.forEach(p=>{ 
+    ctx.fillStyle = '#e67e22'; // Orange
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#f1c40f'; // Yellow
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * 0.6, 0, Math.PI*2); ctx.fill();
+  });
+}
+
+// Updates (Largely the same logic)
+function updateEnemies(){
+  enemies.forEach(e=>{
+    e.x += e.dx; e.y += e.dy;
+    if(e.x<0 || e.x+e.size>canvas.width) e.dx*=-1;
+    if(e.y<0 || e.y+e.size>canvas.height) e.dy*=-1;
+    const dx = player.x - e.x, dy = player.y - e.y; const dist = Math.hypot(dx,dy);
+    if(dist>0 && dist<250){ e.dx = (dx/dist)*1.5; e.dy = (dy/dist)*1.5; }
+  });
+}
+function updatePlayer(){
+  player.dx = (keys['ArrowRight']||keys['KeyD']?1:0) - (keys['ArrowLeft']||keys['KeyA']?1:0);
+  player.dy = (keys['ArrowDown']||keys['KeyS']?1:0) - (keys['ArrowUp']||keys['KeyW']?1:0);
+  const inv = 1/Math.max(1, Math.hypot(player.dx, player.dy));
+  player.x += player.dx*player.speed*inv; player.y += player.dy*player.speed*inv;
+  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+  player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+  if(player.attackCooldown>0) player.attackCooldown--;
+  if(player.damageCooldown>0) player.damageCooldown--;
+}
+function updateProjectiles(){
+  projectiles.forEach(p=>{ p.x += p.dx; p.y += p.dy; });
+  projectiles = projectiles.filter(p=> !p.toRemove && p.x>-10 && p.x<canvas.width+10 && p.y>-10 && p.y<canvas.height+10);
+  projectiles.forEach(p=>{
+    enemies.forEach(e=>{ if(rectsCollide(e,p)){ e.health--; p.toRemove=true; } });
+  });
+  enemies = enemies.filter(e=> e.health>0);
+}
+
+// Collisions (rectsCollide is fine, rectCircleColliding updated for fireball)
+function rectsCollide(a,b){ return a.x < b.x + b.size && a.x + a.size > b.x && a.y < b.y + b.size && a.y + a.size > b.y; }
+function rectCircleColliding(rect, circle){
+  const distX = Math.abs(circle.x - rect.x - rect.size/2);
+  const distY = Math.abs(circle.y - rect.y - rect.size/2);
+  if (distX > rect.size/2 + circle.radius || distY > rect.size/2 + circle.radius) return false;
+  if (distX <= rect.size/2 || distY <= rect.size/2) return true;
+  const dx = distX - rect.size/2; const dy = distY - rect.size/2;
+  return dx*dx + dy*dy <= circle.radius*circle.radius;
+}
+
+// Rules
+function checkTreasurePickup(){
+  if(!treasureItem.pickedUp && rectsCollide(player, treasureItem)){
+    treasureItem.pickedUp = true; player.inventory.push('Golden Chalice'); player.score += 10; updateUI();
+  }
+}
+function checkEnemyAttack(){
+  if(player.damageCooldown>0) return;
+  for(const e of enemies){ if(rectsCollide(player,e)){ player.health -= 1; player.damageCooldown = 30; updateUI(); if(player.health<=0){ alert('Game Over!'); initGame(); } break; } }
+}
+
+// UI
+function updateUI(){ uiHealth.textContent = player.health; uiScore.textContent = player.score; uiInventory.textContent = player.inventory.length? player.inventory.join(', '): 'None'; }
+
+// Controls
+addEventListener('keydown', e=>{
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+  keys[e.code] = true;
+  if(e.code==='Space' && player.attackCooldown===0){
+    projectiles.push({ x: player.x + player.size/2, y: player.y + player.size/2, dx: 8, dy: 0, radius: 8 });
+    player.attackCooldown = 20;
+  }
+});
+addEventListener('keyup', e=>{ keys[e.code] = false; });
+
+// Main loop
+function loop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawTreasure();
+  drawPlayer();
+  drawEnemies();
+  drawProjectiles();
+  updatePlayer();
+  updateEnemies();
+  updateProjectiles();
+  checkTreasurePickup();
+  checkEnemyAttack();
+  requestAnimationFrame(loop);
+}
+
+// Note: Game starts automatically when assets are loaded.
+</script>
+</body>
+</html>

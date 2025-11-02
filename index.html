@@ -91,7 +91,9 @@
         <!-- My Projects Section -->
         <section class="mt-16">
             <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">My Projects</h2>
-            <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+            <div class="max-w-4xl mx-auto grid gap-12">
+                <!-- Project 1: Lasagna Quest -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <!-- Replace this with a real screenshot of your game, e.g., src="img/lasagna-quest-preview.jpg" -->
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/6366f1/ffffff?text=Lasagna\nQuest" alt="Preview of Lasagna Quest game.">
@@ -102,11 +104,26 @@
                     <a href="lasagna_quest_working_build.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Lasagna Quest: Blockpantry War</a>
                     <p class="mt-2 text-gray-500">A simple game built with HTML and JavaScript. Use the arrow keys or WASD to move, and press the spacebar to shoot. See if you can capture the lasagna!</p>
                     </div>
-                    <a href="lasagna_quest_working_build.html" class="mt-6 inline-block bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300">
                     <button onclick="window.location.href='lasagna_quest_working_build.html'" class="mt-6 self-start bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
                         Play Now
-                    </a>
                     </button>
+                </div>
+                </div>
+                <!-- Project 2: Dragon Fire Quest -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="md:flex-shrink-0">
+                    <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/c0392b/FFFFFF?text=Dragon\\nFire" alt="Preview of Dragon Fire Quest game.">
+                </div>
+                <div class="p-8 flex flex-col justify-between">
+                    <div>
+                    <div class="uppercase tracking-wide text-sm text-red-600 font-semibold">Browser Game</div>
+                    <a href="dragon_fire_quest.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Dragon Fire Quest</a>
+                    <p class="mt-2 text-gray-500">A more realistic adventure! Fly your dragon, shoot fireballs at enemy dragons, and capture the Golden Chalice to win.</p>
+                    </div>
+                    <button onclick="window.location.href='dragon_fire_quest.html'" class="mt-6 self-start bg-red-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-red-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                        Play Now
+                    </button>
+                </div>
                 </div>
             </div>
         </section>
