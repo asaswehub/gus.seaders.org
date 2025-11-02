@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fairy Care Simulator</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#1a2b3c; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; margin:0; text-align:center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+  h1 { font-weight:600; margin:16px 0 6px; }
+  #game-container { position: relative; width: 800px; height: 500px; background-color: #2c3e50; background-image: url('https://placehold.co/800x500/2c3e50/FFFFFF?text=Fairy+Garden'); border: 3px solid #8e44ad; border-radius: 12px; }
+  #fairy { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background-color: #ff69b4; border-radius: 50%; transform: translate(-50%, -50%); transition: all 0.5s ease; box-shadow: 0 0 15px #ff69b4, 0 0 25px #ff69b4; }
+  #fairy.sad { background-color: #7f8c8d; box-shadow: none; }
+  #ui-panel { margin-top: 10px; width: 800px; background: #34495e; padding: 15px; border-radius: 8px; box-sizing: border-box; }
+  .status-bar-container { background: #2c3e50; border-radius: 5px; padding: 3px; margin: 5px 0; }
+  .status-bar { height: 20px; border-radius: 3px; transition: width 0.5s; }
+  #hunger-bar { background: #e67e22; }
+  #happiness-bar { background: #f1c40f; }
+  .actions { display: flex; justify-content: space-around; margin-top: 10px; }
+  .action-button { font-size: 18px; padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; }
+  #feed-button { background: #d35400; color: white; }
+  #play-button { background: #f39c12; color: white; }
+  #math-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
+  #problem { font-size: 32px; margin-bottom: 15px; }
+  #answer { font-size: 24px; width: 120px; text-align: center; }
+  #game-over-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 20; }
+  .restart-button { font-size: 24px; padding: 10px 20px; margin-top: 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>Fairy Care Simulator</h1>
+<div id="game-wrapper">
+    <div id="game-container">
+        <div id="fairy"></div>
+        <div id="math-ui">
+            <div id="problem"></div>
+            <form id="math-form"><input type="number" id="answer" autocomplete="off" /></form>
+        </div>
+        <div id="game-over-screen">
+            <h2>The fairy flew away...</h2>
+            <p>You kept it happy for <strong id="final-score">0</strong> seconds.</p>
+            <button class="restart-button">Try Again</button>
+        </div>
+    </div>
+    <div id="ui-panel">
+        <div>
+            <span>Hunger:</span>
+            <div class="status-bar-container">
+                <div id="hunger-bar" class="status-bar"></div>
+            </div>
+        </div>
+        <div>
+            <span>Happiness:</span>
+            <div class="status-bar-container">
+                <div id="happiness-bar" class="status-bar"></div>
+            </div>
+        </div>
+        <div class="actions">
+            <button id="feed-button" class="action-button">Feed</button>
+            <button id="play-button" class="action-button">Play</button>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const fairyEl = document.getElementById('fairy');
+const hungerBar = document.getElementById('hunger-bar');
+const happinessBar = document.getElementById('happiness-bar');
+const mathUI = document.getElementById('math-ui');
+const problemEl = document.getElementById('problem');
+const mathForm = document.getElementById('math-form');
+const gameOverScreen = document.getElementById('game-over-screen');
+const finalScoreEl = document.getElementById('final-score');
+
+let fairy = {};
+let gameLoopInterval;
+let score = 0;
+let currentAction = null;
+let currentAnswer = 0;
+
+function initGame() {
+    fairy = {
+        hunger: 100,
+        happiness: 100,
+        max: 100
+    };
+    score = 0;
+    gameOverScreen.style.display = 'none';
+    fairyEl.classList.remove('sad');
+    
+    document.getElementById('feed-button').disabled = false;
+    document.getElementById('play-button').disabled = false;
+
+    updateUI();
+    gameLoopInterval = setInterval(gameLoop, 1000);
+}
+
+function updateUI() {
+    hungerBar.style.width = `${fairy.hunger}%`;
+    happinessBar.style.width = `${fairy.happiness}%`;
+
+    // Fairy gets sad if needs are low
+    if (fairy.hunger < 30 || fairy.happiness < 30) {
+        fairyEl.classList.add('sad');
+    } else {
+        fairyEl.classList.remove('sad');
+    }
+}
+
+function gameLoop() {
+    // Needs decrease over time
+    fairy.hunger = Math.max(0, fairy.hunger - 2);
+    fairy.happiness = Math.max(0, fairy.happiness - (fairy.hunger < 50 ? 4 : 2)); // Happiness drops faster if hungry
+
+    score++;
+    updateUI();
+
+    // Check for game over
+    if (fairy.hunger <= 0 || fairy.happiness <= 0) {
+        endGame();
+    }
+}
+
+function endGame() {
+    clearInterval(gameLoopInterval);
+    finalScoreEl.textContent = score;
+    gameOverScreen.style.display = 'flex';
+    document.getElementById('feed-button').disabled = true;
+    document.getElementById('play-button').disabled = true;
+}
+
+function startAction(action) {
+    currentAction = action;
+    generateProblem();
+    mathUI.style.display = 'flex';
+    document.getElementById('answer').focus();
+}
+
+function generateProblem() {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    currentAnswer = num1 + num2;
+    problemEl.textContent = `${num1} + ${num2} = ?`;
+}
+
+mathForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const userAnswer = parseInt(document.getElementById('answer').value, 10);
+
+    if (userAnswer === currentAnswer) {
+        if (currentAction === 'feed') {
+            fairy.hunger = Math.min(fairy.max, fairy.hunger + 30);
+        } else if (currentAction === 'play') {
+            fairy.happiness = Math.min(fairy.max, fairy.happiness + 30);
+        }
+    } else {
+        // Penalty for wrong answer
+        fairy.happiness = Math.max(0, fairy.happiness - 10);
+    }
+
+    updateUI();
+    closeMathUI();
+});
+
+function closeMathUI() {
+    mathUI.style.display = 'none';
+    document.getElementById('answer').value = '';
+    currentAction = null;
+}
+
+document.getElementById('feed-button').addEventListener('click', () => startAction('feed'));
+document.getElementById('play-button').addEventListener('click', () => startAction('play'));
+document.querySelector('.restart-button').addEventListener('click', initGame);
+
+// Close math UI if clicked outside the form
+mathUI.addEventListener('click', (e) => {
+    if (e.target === mathUI) {
+        closeMathUI();
+    }
+});
+
+initGame();
+
+</script>
+</body>
+</html>
