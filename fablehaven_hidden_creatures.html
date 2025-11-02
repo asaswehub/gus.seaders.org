@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fablehaven: Hidden Creatures</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#1a2b3c; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; margin:0; text-align:center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+  h1 { font-weight:600; margin:16px 0 6px; }
+  #game-container { position: relative; width: 800px; height: 500px; background-color: #228b22; background-image: url('https://placehold.co/800x500/228b22/FFFFFF?text=Fablehaven+Forest'); border: 3px solid #654321; }
+  .creature { position: absolute; width: 60px; height: 60px; opacity: 0.2; transition: opacity 0.3s; cursor: pointer; }
+  .creature:hover { opacity: 0.6; }
+  .creature.visible { opacity: 1 !important; }
+  .creature.found { opacity: 0.5; cursor: default; filter: grayscale(100%); transform: scale(0.9); }
+  #ui-panel { margin-top: 10px; font-size: 20px; display: flex; justify-content: space-around; width: 800px; background: #3c2f2f; padding: 10px; border-radius: 8px; }
+  #milk-button { font-size: 18px; padding: 8px 16px; border-radius: 5px; border: none; background: #e0e0e0; color: #333; cursor: pointer; }
+  #milk-button:disabled { background: #888; cursor: not-allowed; }
+  #start-screen, #end-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
+  #end-screen { display: none; }
+  .start-button, .restart-button { font-size: 24px; padding: 10px 20px; margin-top: 20px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>Fablehaven: Hidden Creatures</h1>
+<div id="game-wrapper">
+    <div id="game-container">
+        <div id="start-screen">
+            <h2>Find the Hidden Creatures!</h2>
+            <p>Click on the magical creatures to find them. Use the milk for a better view!</p>
+            <button class="start-button">Start Game</button>
+        </div>
+        <div id="end-screen">
+            <h2 id="end-message"></h2>
+            <p>Your time: <span id="final-time"></span> seconds</p>
+            <button class="restart-button">Play Again</button>
+        </div>
+        <!-- Creatures will be added here by JS -->
+    </div>
+    <div id="ui-panel">
+        <span>Time: <span id="timer">0</span></span>
+        <span>Found: <span id="found-count">0</span> / 5</span>
+        <button id="milk-button">Drink Milk (3)</button>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const gameContainer = document.getElementById('game-container');
+const startScreen = document.getElementById('start-screen');
+const endScreen = document.getElementById('end-screen');
+const timerEl = document.getElementById('timer');
+const foundCountEl = document.getElementById('found-count');
+const milkButton = document.getElementById('milk-button');
+
+const creatureData = [
+    { id: 1, name: 'Fairy', color: '#ff69b4', top: '20%', left: '15%' },
+    { id: 2, name: 'Satyr', color: '#8b4513', top: '70%', left: '30%' },
+    { id: 3, name: 'Brownie', color: '#d2691e', top: '45%', left: '50%' },
+    { id: 4, name: 'Naiad', color: '#00bfff', top: '80%', left: '85%' },
+    { id: 5, name: 'Sprite', color: '#adff2f', top: '10%', left: '75%' }
+];
+
+let creatures = [];
+let foundCount = 0;
+let milkUses = 3;
+let timerInterval;
+let seconds = 0;
+
+function initGame() {
+    gameContainer.innerHTML = ''; // Clear previous creatures
+    creatures = [];
+    foundCount = 0;
+    milkUses = 3;
+    seconds = 0;
+
+    foundCountEl.textContent = `0 / ${creatureData.length}`;
+    milkButton.textContent = `Drink Milk (${milkUses})`;
+    milkButton.disabled = false;
+    timerEl.textContent = '0';
+
+    creatureData.forEach(data => {
+        const el = document.createElement('div');
+        el.className = 'creature';
+        el.style.top = data.top;
+        el.style.left = data.left;
+        el.style.backgroundColor = data.color;
+        el.dataset.id = data.id;
+        
+        const creature = {
+            ...data,
+            element: el,
+            found: false
+        };
+
+        el.addEventListener('click', () => {
+            if (!creature.found) {
+                creature.found = true;
+                el.classList.add('found');
+                foundCount++;
+                foundCountEl.textContent = `${foundCount} / ${creatureData.length}`;
+                if (foundCount === creatureData.length) {
+                    endGame(true);
+                }
+            }
+        });
+
+        creatures.push(creature);
+        gameContainer.appendChild(el);
+    });
+}
+
+function startGame() {
+    initGame();
+    startScreen.style.display = 'none';
+    endScreen.style.display = 'none';
+
+    timerInterval = setInterval(() => {
+        seconds++;
+        timerEl.textContent = seconds;
+    }, 1000);
+}
+
+function endGame(won) {
+    clearInterval(timerInterval);
+    endScreen.style.display = 'flex';
+    document.getElementById('final-time').textContent = seconds;
+    if (won) {
+        document.getElementById('end-message').textContent = "Congratulations! You found them all!";
+    } else {
+        document.getElementById('end-message').textContent = "Game Over!";
+    }
+}
+
+function drinkMilk() {
+    if (milkUses > 0 && !milkButton.disabled) {
+        milkUses--;
+        milkButton.textContent = `Drink Milk (${milkUses})`;
+        milkButton.disabled = true;
+
+        creatures.forEach(c => {
+            if (!c.found) {
+                c.element.classList.add('visible');
+            }
+        });
+
+        setTimeout(() => {
+            creatures.forEach(c => c.element.classList.remove('visible'));
+            // Cooldown before button can be used again
+            setTimeout(() => {
+                if (milkUses > 0) milkButton.disabled = false;
+            }, 2000);
+        }, 3000); // Milk effect lasts for 3 seconds
+    }
+}
+
+milkButton.addEventListener('click', drinkMilk);
+document.querySelector('.start-button').addEventListener('click', startGame);
+document.querySelector('.restart-button').addEventListener('click', startGame);
+
+// Add start and end screens back into the container after init
+gameContainer.appendChild(startScreen);
+gameContainer.appendChild(endScreen);
+
+</script>
+</body>
+</html>
