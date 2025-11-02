@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Basic Static Homepage</title>
+    <!-- Load Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Set a default font and slightly darker background for contrast */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header / Navigation Bar -->
+    <header class="bg-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-gray-800 tracking-tight">
+                My Static Site
+            </a>
+            <nav>
+                <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 ml-4">Home</a>
+                <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 ml-4">About</a>
+                <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 ml-4">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <!-- Hero Section -->
+        <div class="text-center mb-12 py-10 bg-white rounded-xl shadow-lg border-b-4 border-indigo-500">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4">
+                Welcome to My Test Page!
+            </h1>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                This is a starting point for my new static website. Everything seems to be working for now.
+            </p>
+            <a href="#" class="mt-6 inline-block bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 transform hover:scale-105">
+                Start Exploring
+            </a>
+        </div>
+
+        <!-- Content Card for Testing Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-white p-6 rounded-lg shadow-xl border-t-2 border-green-500">
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Feature A</h2>
+                <p class="text-gray-600 text-sm">
+                    This is a placeholder content block. We can use this space to test out different font sizes, line heights, and margins. It's great for checking visual hierarchy.
+                </p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-xl border-t-2 border-yellow-500">
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Feature B</h2>
+                <p class="text-gray-600 text-sm">
+                    Let's see how this card looks when the screen size changes. Tailwind's responsive classes (`md:grid-cols-3`) ensure it adapts smoothly for tablets and desktops.
+                </p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-xl border-t-2 border-red-500">
+                <h2 class="text-xl font-semibold text-gray-800 mb-3">Feature C</h2>
+                <p class="text-gray-600 text-sm">
+                    Remember to always use relative units and responsive classes to prevent horizontal scrolling on mobile devices. Testing complete!
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 mt-12 py-6">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-400">
+            <p>&copy; 2025 My Static Site. All rights reserved. | Built for Testing Purposes.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
