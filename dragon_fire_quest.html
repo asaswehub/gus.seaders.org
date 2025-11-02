@@ -10,14 +10,19 @@
   h1 { font-weight:600; margin:16px 0 6px; }
   #ui { font-size:18px; margin-bottom:10px; }
   canvas { background:#2c3e50; display:block; margin:16px auto 24px; border:2px solid #c0392b; }
-  .hint { opacity:.8; font-size:14px; margin-bottom:18px; }
   #loading { font-size: 24px; margin-top: 40px; }
+  #math-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); padding: 20px; border-radius: 10px; display: none; z-index: 10; }
+  #problem { font-size: 24px; margin-bottom: 10px; }
+  #answer { font-size: 20px; width: 100px; text-align: center; }
 </style>
 </head>
 <body>
 <h1>Dragon Fire Quest</h1>
 <div id="ui">Health: <span id="health">100</span> | Score: <span id="score">0</span> | Inventory: <span id="inventory">None</span></div>
-<div class="hint">Move: Arrow Keys or WASD. Shoot: Space. Reload page to restart.</div>
+<div id="math-ui">
+    <div id="problem"></div>
+    <form id="math-form"><input type="number" id="answer" autocomplete="off" /></form>
+</div>
 <div id="loading">Loading Assets...</div>
 <canvas id="gameCanvas" width="800" height="600" aria-label="Game canvas" style="display: none;"></canvas>
 <script>
@@ -30,6 +35,11 @@ const uiHealth = document.getElementById('health');
 const uiScore = document.getElementById('score');
 const uiInventory = document.getElementById('inventory');
 const loadingText = document.getElementById('loading');
+
+// Math UI elements
+const mathUI = document.getElementById('math-ui');
+const problemEl = document.getElementById('problem');
+const mathForm = document.getElementById('math-form');
 
 // --- UPDATED: Image and Audio Asset Loading ---
 const assets = {};
@@ -76,7 +86,7 @@ Object.keys(audioAssetUrls).forEach(key => {
 });
 
 // State
-let player, enemies, projectiles, treasureItem, keys;
+let player, enemies, projectiles, treasureItem, keys, gamePaused, currentAnswer;
 
 function initGame(){
   player = { x:100, y:100, size:50, speed:4, health:100, score:0, inventory:[], dx:0, dy:0, attackCooldown:0, damageCooldown:0 };
@@ -87,6 +97,7 @@ function initGame(){
   projectiles = [];
   treasureItem = { x:700, y:100, size:40, pickedUp:false };
   keys = Object.create(null);
+  gamePaused = false;
   updateUI();
 }
 
@@ -165,20 +176,44 @@ function checkEnemyAttack(){
 // UI
 function updateUI(){ uiHealth.textContent = player.health; uiScore.textContent = player.score; uiInventory.textContent = player.inventory.length? player.inventory.join(', '): 'None'; }
 
+function generateProblem() {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    currentAnswer = num1 + num2;
+    problemEl.textContent = `${num1} + ${num2} = ?`;
+}
+
 // Controls
 addEventListener('keydown', e=>{
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
   keys[e.code] = true;
-  if(e.code==='Space' && player.attackCooldown===0){
+  if(e.code==='Space' && player.attackCooldown===0 && !gamePaused){
+    gamePaused = true;
+    mathUI.style.display = 'block';
+    generateProblem();
+    document.getElementById('answer').focus();
+  }
+});
+addEventListener('keyup', e=>{ keys[e.code] = false; });
+
+mathForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const userAnswer = parseInt(document.getElementById('answer').value, 10);
+    if (userAnswer === currentAnswer) {
     // --- PLAY SOUND ON SHOOT ---
     // Clone the audio node to allow for rapid, overlapping sounds
     audioAssets.fireball.cloneNode().play();
 
     projectiles.push({ x: player.x + player.size/2, y: player.y + player.size/2, dx: 8, dy: 0, radius: 8 });
     player.attackCooldown = 20;
-  }
+    } else {
+        player.attackCooldown = 60;
+    }
+    mathUI.style.display = 'none';
+    document.getElementById('answer').value = '';
+    gamePaused = false;
+    requestAnimationFrame(loop);
 });
-addEventListener('keyup', e=>{ keys[e.code] = false; });
 
 // Main loop
 function loop(){
@@ -187,6 +222,9 @@ function loop(){
   drawPlayer();
   drawEnemies();
   drawProjectiles();
+
+  if (gamePaused) return;
+
   updatePlayer();
   updateEnemies();
   updateProjectiles();

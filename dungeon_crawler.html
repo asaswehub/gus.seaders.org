@@ -10,19 +10,33 @@
   h1 { font-weight:600; margin:16px 0 6px; }
   canvas { background:#000; display:block; margin:16px auto 24px; border:2px solid #555; image-rendering: pixelated; image-rendering: crisp-edges; }
   .hint { opacity:.8; font-size:14px; margin-bottom:18px; }
+  #info-bar { font-size: 18px; margin-bottom: 10px; }
   #loading { font-size: 24px; margin-top: 40px; }
+  #math-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; display: none; z-index: 10; }
+  #problem { font-size: 24px; margin-bottom: 10px; }
+  #answer { font-size: 20px; width: 100px; text-align: center; }
 </style>
 </head>
 <body>
 <h1>Dungeon Crawler</h1>
-<div class="hint">Move: Arrow Keys or WASD.</div>
+<div id="info-bar">Health: <span id="health">100</span></div>
 <div id="loading">Loading Assets...</div>
+<div id="math-ui">
+    <div id="problem"></div>
+    <form id="math-form"><input type="number" id="answer" autocomplete="off" /></form>
+</div>
 <canvas id="gameCanvas" width="640" height="480" aria-label="Game canvas" style="display: none;"></canvas>
 <script>
 'use strict';
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const loadingText = document.getElementById('loading');
+
+// UI Elements
+const healthEl = document.getElementById('health');
+const mathUI = document.getElementById('math-ui');
+const problemEl = document.getElementById('problem');
+const mathForm = document.getElementById('math-form');
 
 // --- Game Configuration ---
 const TILE_SIZE = 16;
@@ -86,12 +100,13 @@ const levelMap = [
 ];
 
 // --- Game State ---
-let player, enemies, keys;
+let player, enemies, keys, gamePaused, currentAnswer, enemyToFight;
 
 function initGame(){
-  player = { x: TILE_SIZE * 2, y: TILE_SIZE * 2, size: TILE_SIZE, speed: 2, dx:0, dy:0, isMoving: false, animTimer: 0 };
-  enemies = [ { x: TILE_SIZE * 20, y: TILE_SIZE * 5, size: TILE_SIZE, dx: 1, dy: 0 } ];
+  player = { x: TILE_SIZE * 2, y: TILE_SIZE * 2, size: TILE_SIZE, speed: 2, dx:0, dy:0, isMoving: false, animTimer: 0, health: 100, damageCooldown: 0 };
+  enemies = [ { id: 0, x: TILE_SIZE * 20, y: TILE_SIZE * 5, size: TILE_SIZE, dx: 1, dy: 0, health: 1 } ];
   keys = Object.create(null);
+  gamePaused = false;
 }
 
 // --- Drawing ---
@@ -136,6 +151,8 @@ function updatePlayer() {
 
     player.isMoving = player.dx !== 0 || player.dy !== 0;
 
+    if (player.damageCooldown > 0) player.damageCooldown--;
+
     let nextX = player.x + player.dx * player.speed;
     let nextY = player.y + player.dy * player.speed;
 
@@ -152,29 +169,86 @@ function updatePlayer() {
 
 function updateEnemies() {
     enemies.forEach(e => {
+        // Check for player collision to start battle
+        if (rectsCollide(player, e)) {
+            if (!gamePaused) { // Start battle only once
+                startBattle(e);
+            }
+        }
+
         let nextX = e.x + e.dx;
         if (isWall(nextX, e.y) || isWall(nextX + e.size -1, e.y)) {
             e.dx *= -1;
         } else {
             e.x += e.dx;
         }
+
     });
+    enemies = enemies.filter(e => e.health > 0);
 }
+
+function rectsCollide(a,b){ return a.x < b.x + b.size && a.x + a.size > b.x && a.y < b.y + b.size && a.y + a.size > b.y; }
+
+// --- Battle Logic ---
+function generateProblem() {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    currentAnswer = num1 + num2;
+    problemEl.textContent = `${num1} + ${num2} = ?`;
+}
+
+function startBattle(enemy) {
+    gamePaused = true;
+    enemyToFight = enemy;
+    mathUI.style.display = 'block';
+    generateProblem();
+    document.getElementById('answer').focus();
+}
+
+mathForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const userAnswer = parseInt(document.getElementById('answer').value, 10);
+    if (userAnswer === currentAnswer) {
+        // Correct: Defeat enemy
+        enemyToFight.health = 0;
+    } else {
+        // Incorrect: Player takes damage
+        if (player.damageCooldown === 0) {
+            player.health -= 10;
+            healthEl.textContent = player.health;
+            player.damageCooldown = 60; // 1 second invulnerability
+        }
+    }
+    mathUI.style.display = 'none';
+    document.getElementById('answer').value = '';
+    gamePaused = false;
+    enemyToFight = null;
+    requestAnimationFrame(loop);
+});
 
 // --- Controls ---
 addEventListener('keydown', e => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
     keys[e.code] = true;
 });
-addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('keyup', e => { keys[e.code] = false;});
 
 // --- Main Loop ---
 function loop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    if (player.health <= 0) {
+        ctx.fillStyle = 'red';
+        ctx.font = '48px sans-serif';
+        ctx.fillText('GAME OVER', canvas.width/2 - 150, canvas.height/2);
+        return;
+    }
+
     drawMap();
     drawPlayer();
     drawEnemies();
+    
+    if (gamePaused) return;
 
     updatePlayer();
     updateEnemies();

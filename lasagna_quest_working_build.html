@@ -10,13 +10,18 @@
   h1 { font-weight:600; margin:16px 0 6px; }
   #ui { font-size:18px; margin-bottom:10px; }
   canvas { background:#d2b48c; display:block; margin:16px auto 24px; border:2px solid #ffa500; }
-  .hint { opacity:.8; font-size:14px; margin-bottom:18px; }
+  #math-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); padding: 20px; border-radius: 10px; display: none; }
+  #problem { font-size: 24px; margin-bottom: 10px; }
+  #answer { font-size: 20px; width: 100px; text-align: center; }
 </style>
 </head>
 <body>
 <h1>Lasagna Quest: Blockpantry War</h1>
 <div id="ui">Health: <span id="health">100</span> | Score: <span id="score">0</span> | Inventory: <span id="inventory">None</span></div>
-<div class="hint">Move: Arrow Keys or WASD. Shoot: Space. Reload page to restart.</div>
+<div id="math-ui">
+    <div id="problem"></div>
+    <form id="math-form"><input type="number" id="answer" autocomplete="off" /></form>
+</div>
 <canvas id="gameCanvas" width="800" height="600" aria-label="Game canvas"></canvas>
 <script>
 'use strict';
@@ -32,7 +37,12 @@ const uiInventory = document.getElementById('inventory');
 const assets = { player:'#ffa500', enemy:'#00ffff', projectile:'#ff6347', lasagna:'#ffcc00' };
 
 // State
-let player, enemies, projectiles, lasagnaItem, keys;
+let player, enemies, projectiles, lasagnaItem, keys, gamePaused, currentAnswer;
+
+// Math UI elements
+const mathUI = document.getElementById('math-ui');
+const problemEl = document.getElementById('problem');
+const mathForm = document.getElementById('math-form');
 
 function initGame(){
   player = { x:100, y:100, size:40, speed:4, health:100, score:0, inventory:[], dx:0, dy:0, attackCooldown:0, damageCooldown:0 };
@@ -43,6 +53,7 @@ function initGame(){
   projectiles = [];
   lasagnaItem = { x:700, y:100, size:30, pickedUp:false };
   keys = Object.create(null);
+  gamePaused = false;
   updateUI();
 }
 
@@ -123,17 +134,42 @@ function checkEnemyAttack(){
 function updateUI(){ uiHealth.textContent = player.health; uiScore.textContent = player.score; uiInventory.textContent = player.inventory.length? player.inventory.join(', '): 'None'; }
 
 // Controls
+function generateProblem() {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    currentAnswer = num1 + num2;
+    problemEl.textContent = `${num1} + ${num2} = ?`;
+}
+
 addEventListener('keydown', e=>{
   // prevent page scroll on arrows/space
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
   keys[e.code] = true;
-  if(e.code==='Space' && player.attackCooldown===0){
-    // shoot to the right; could be extended to aim
-    projectiles.push({ x: player.x + player.size/2, y: player.y + player.size/2, dx: 6, dy: 0, radius: 6 });
-    player.attackCooldown = 20;
+  if(e.code==='Space' && player.attackCooldown===0 && !gamePaused){
+    gamePaused = true;
+    mathUI.style.display = 'block';
+    generateProblem();
+    document.getElementById('answer').focus();
   }
 });
 addEventListener('keyup', e=>{ keys[e.code] = false; });
+
+mathForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const userAnswer = parseInt(document.getElementById('answer').value, 10);
+    if (userAnswer === currentAnswer) {
+        // Correct answer, shoot projectile
+        projectiles.push({ x: player.x + player.size/2, y: player.y + player.size/2, dx: 6, dy: 0, radius: 6 });
+        player.attackCooldown = 20;
+    } else {
+        // Incorrect, add a small cooldown penalty
+        player.attackCooldown = 60; // 1 second penalty
+    }
+    mathUI.style.display = 'none';
+    document.getElementById('answer').value = '';
+    gamePaused = false;
+    requestAnimationFrame(loop); // Resume game loop
+});
 
 // Main loop
 function loop(){
@@ -142,12 +178,15 @@ function loop(){
   drawPlayer();
   drawEnemies();
   drawProjectiles();
+
+  if (gamePaused) return; // Stop updates if paused for math problem
+
   updatePlayer();
   updateEnemies();
   updateProjectiles();
   checkLasagnaPickup();
   checkEnemyAttack();
-  requestAnimationFrame(loop);
+  requestAnimationFrame(loop); 
 }
 
 initGame();
