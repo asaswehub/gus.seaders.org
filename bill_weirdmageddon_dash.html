@@ -11,6 +11,8 @@
   canvas { background:#c0392b; display:block; margin:16px auto 24px; border:2px solid #f1c40f; }
   .hint { opacity:.8; font-size:14px; margin-bottom:18px; }
   #score-display { font-size: 24px; font-weight: bold; }
+  .back-link { color: #f39c12; text-decoration: none; margin-bottom: 10px; display: inline-block; }
+  .back-link:hover { color: #f1c40f; text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -31,7 +33,7 @@ const OBSTACLE_SPAWN_RATE = 120; // Lower is faster
 const NUM_STARS = 100;
 
 // --- Game State ---
-let player, obstacles, keys, score, frameCount, gameOver, highScore, stars;
+let player, obstacles, keys, score, frameCount, gameOver, highScore, stars, currentUser;
 
 function initGame(){
   player = { 
@@ -58,8 +60,10 @@ function initGame(){
       });
   }
 
+  // --- NEW: Get logged in user and their high score ---
+  currentUser = sessionStorage.getItem('currentUser') || 'guest';
   // Load high score from localStorage
-  highScore = localStorage.getItem('billDashHighScore') || 0;
+  highScore = localStorage.getItem(`billDashHighScore_${currentUser}`) || 0;
   highScoreEl.textContent = highScore;
   loop(); // Start the loop
 }
@@ -175,7 +179,7 @@ function loop() {
         // Check for and save new high score
         if (score > highScore) {
             highScore = score;
-            localStorage.setItem('billDashHighScore', highScore);
+            localStorage.setItem(`billDashHighScore_${currentUser}`, highScore);
         }
 
         ctx.font = '24px sans-serif';

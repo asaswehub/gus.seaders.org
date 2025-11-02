@@ -54,7 +54,30 @@ const endMessageEl = document.getElementById('end-message');
 const restartButton = document.getElementById('restart-button');
 
 // Game State
-let player1, player2, activePlayer, currentAnswer, projectiles;
+let player1, player2, activePlayer, currentAnswer, projectiles, audioAssets;
+
+// --- NEW: Audio Asset Loading ---
+const audioAssetUrls = {
+    attack: 'sound/magic-spell.mp3',
+    hurt: 'sound/hit-damage.mp3'
+};
+let assetsLoaded = 0;
+const totalAssets = Object.keys(audioAssetUrls).length;
+
+function assetLoaded() {
+    assetsLoaded++;
+    if (assetsLoaded === totalAssets) {
+        initGame(); // Start the game only after all sounds are ready
+    }
+}
+
+function loadAudio() {
+    audioAssets = {};
+    Object.keys(audioAssetUrls).forEach(key => {
+        audioAssets[key] = new Audio(audioAssetUrls[key]);
+        audioAssets[key].addEventListener('canplaythrough', assetLoaded, { once: true });
+    });
+}
 
 function initGame() {
     player1 = { name: "Player 1", x: 150, y: 250, width: 50, height: 80, hp: 100, maxHp: 100, color: '#7e22ce', hurtTimer: 0 };
@@ -68,7 +91,7 @@ function initGame() {
     messageLogEl.textContent = `${activePlayer.name}'s turn!`;
     projectiles = [];
     generateNewProblem();
-    requestAnimationFrame(draw);
+    loop(); // Start the main game loop
 }
 
 function generateNewProblem() {
@@ -146,6 +169,7 @@ function updateProjectiles() {
         // Check for hit
         if ((p.dx > 0 && p.x >= p.target.x) || (p.dx < 0 && p.x <= p.target.x)) {
             p.target.hp = Math.max(0, p.target.hp - p.damage);
+            audioAssets.hurt.cloneNode().play(); // Play hurt sound
             p.target.hurtTimer = 15; // Set hurt timer for 15 frames
             messageLogEl.textContent = `${p.attacker.name} dealt ${p.damage} damage!`;
             projectiles.splice(index, 1); // Remove projectile
@@ -179,6 +203,7 @@ function handleAnswer(e) {
             target: opponent
         };
         projectiles.push(projectile);
+        audioAssets.attack.cloneNode().play(); // Play attack sound
         messageLogEl.textContent = `Correct! ${activePlayer.name} casts a spell!`;
     } else {
         // Incorrect answer, turn is missed
@@ -206,7 +231,7 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-initGame();
+loadAudio(); // Start loading assets, which will then call initGame()
 
 </script>
 </body>

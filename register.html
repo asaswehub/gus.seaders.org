@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - notawebsigtdotcom.com</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>:root { color-scheme: dark; }</style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
+
+    <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-sm">
+        <h1 class="text-2xl font-bold text-center mb-6">Create Account</h1>
+        <form id="register-form">
+            <div class="mb-4">
+                <label for="username" class="block mb-2">Username</label>
+                <input type="text" id="username" class="w-full px-3 py-2 bg-gray-700 rounded" required>
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block mb-2">Password</label>
+                <input type="password" id="password" class="w-full px-3 py-2 bg-gray-700 rounded" required>
+            </div>
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Register
+            </button>
+        </form>
+        <p id="error-message" class="text-red-500 text-center mt-4 hidden"></p>
+        <div class="text-center mt-6">
+            <p>Already have an account? <a href="login.html" class="text-indigo-400 hover:underline">Login here</a></p>
+            <p class="mt-2"><a href="index.html" class="text-gray-400 hover:underline">&larr; Back to Home</a></p>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+        const registerForm = document.getElementById('register-form');
+        const errorMessage = document.getElementById('error-message');
+
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Check if user already exists
+            if (localStorage.getItem(`user_${username}`)) {
+                errorMessage.textContent = 'Username already taken.';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            // In a REAL system, you would NEVER store a password in plain text.
+            // It should be hashed on a server. This is for demonstration only.
+            const account = {
+                username: username,
+                password: password // THIS IS NOT SECURE
+            };
+
+            localStorage.setItem(`user_${username}`, JSON.stringify(account));
+
+            // Automatically log the user in and redirect
+            sessionStorage.setItem('currentUser', username);
+            window.location.href = 'index.html';
+        });
+    </script>
+
+</body>
+</html>

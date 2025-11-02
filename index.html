@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Basic Static Homepage</title>
+    <title>notawebsigtdotcom.com</title>
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,15 +30,11 @@
     <!-- Header / Navigation Bar -->
     <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50 transition-colors duration-300">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <a href="#" class="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
-                My Static Site
+            <a href="index.html" class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">
+                notawebsigtdotcom.com
             </a>
-            <div class="flex items-center">
-                <nav id="nav-menu" class="hidden md:flex items-center">
-                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 ml-4">Home</a>
-                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 ml-4">About</a>
-                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 ml-4">Contact</a>
-                </nav>
+            <div id="user-nav" class="flex items-center">
+                <!-- This will be populated by script -->
                 <button id="theme-toggle" class="ml-4 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <svg id="theme-toggle-dark-icon" class="hidden h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                     <svg id="theme-toggle-light-icon" class="hidden h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
@@ -288,26 +284,44 @@
     <!-- Footer -->
     <footer class="bg-gray-800 dark:bg-black mt-12 py-6">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-400">
-            <p>&copy; 2025 My Static Site. All rights reserved.</p>
+            <p>&copy; 2025 notawebsigtdotcom.com. All rights reserved.</p>
         </div>
     </footer>
 
     <!-- Link to your custom script file -->
     <script>
-        // Mobile Menu Toggle
-        const hamburgerButton = document.getElementById('hamburger-button');
-        const navMenu = document.getElementById('nav-menu');
+        // --- NEW: User Authentication UI ---
+        const userNav = document.getElementById('user-nav');
+        const currentUser = sessionStorage.getItem('currentUser');
 
-        hamburgerButton.addEventListener('click', () => {
-            navMenu.classList.toggle('hidden');
-            // For better mobile UX, you might want to change the menu to be a full-screen overlay
-            // For now, this just toggles visibility.
-        });
+        if (currentUser) {
+            // User is logged in
+            userNav.insertAdjacentHTML('afterbegin', `
+                <span class="text-gray-800 dark:text-gray-200">Welcome, <strong>${currentUser}</strong>!</span>
+                <a href="#" id="logout-button" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 ml-4">Logout</a>
+            `);
+            
+            document.getElementById('logout-button').addEventListener('click', (e) => {
+                e.preventDefault();
+                sessionStorage.removeItem('currentUser');
+                window.location.reload();
+            });
+
+        } else {
+            // User is logged out
+            userNav.insertAdjacentHTML('afterbegin', `
+                <nav class="flex items-center">
+                    <a href="login.html" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 ml-4">Login</a>
+                    <a href="register.html" class="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Register</a>
+                </nav>
+            `);
+        }
 
         // Dark Mode Toggle
         const themeToggleBtn = document.getElementById('theme-toggle');
         const darkIcon = document.getElementById('theme-toggle-dark-icon');
         const lightIcon = document.getElementById('theme-toggle-light-icon');
+        const hamburgerButton = document.getElementById('hamburger-button'); // Keep for mobile later
 
         // Set initial icon state
         if (document.documentElement.classList.contains('dark')) {
