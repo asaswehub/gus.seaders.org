@@ -54,25 +54,37 @@ const endMessageEl = document.getElementById('end-message');
 const restartButton = document.getElementById('restart-button');
 
 // Game State
-let player, enemy, currentAnswer, audioAssets;
+let player, enemy, currentAnswer, audioAssets, imageAssets;
 
-// --- NEW: Audio Asset Loading ---
+// --- NEW: Asset Loading ---
+const imageUrls = {
+    background: 'https://placehold.co/800x400/2c1e2e/FFFFFF?text=Spooky+Forest' // Replace with your own image e.g., 'img/battle-bg.png'
+};
 const audioAssetUrls = {
     attack: 'sound/magic-spell.mp3',
     hurt: 'sound/hit-damage.mp3'
 };
 let assetsLoaded = 0;
-const totalAssets = Object.keys(audioAssetUrls).length;
+const totalAssets = Object.keys(imageUrls).length + Object.keys(audioAssetUrls).length;
 
 function assetLoaded() {
     assetsLoaded++;
     if (assetsLoaded === totalAssets) {
         initGame(); // Start the game only after all sounds are ready
+        loop(); // Start the main game loop
     }
 }
 
-function loadAudio() {
+function loadAssets() {
+    imageAssets = {};
     audioAssets = {};
+    // Load Images
+    Object.keys(imageUrls).forEach(key => {
+        imageAssets[key] = new Image();
+        imageAssets[key].src = imageUrls[key];
+        imageAssets[key].onload = assetLoaded;
+    });
+    // Load Audio
     Object.keys(audioAssetUrls).forEach(key => {
         audioAssets[key] = new Audio(audioAssetUrls[key]);
         audioAssets[key].addEventListener('canplaythrough', assetLoaded, { once: true });
@@ -137,8 +149,13 @@ function drawEnemy() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Ground
-    ctx.fillStyle = '#27ae60';
+    // Draw background image first
+    if (imageAssets.background) {
+        ctx.drawImage(imageAssets.background, 0, 0, canvas.width, canvas.height);
+    }
+
+    // Draw a semi-transparent ground over the background
+    ctx.fillStyle = 'rgba(39, 174, 96, 0.7)';
     ctx.fillRect(0, 330, canvas.width, 70);
 
     drawPlayer();
@@ -207,7 +224,7 @@ function loop() {
     requestAnimationFrame(loop);
 }
 
-loadAudio(); // Start loading assets, which will then call initGame()
+loadAssets(); // Start loading assets, which will then call initGame() and loop()
 </script>
 </body>
 </html>
