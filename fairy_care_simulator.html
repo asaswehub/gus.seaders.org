@@ -9,17 +9,22 @@
   body { background:#1a2b3c; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; margin:0; text-align:center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
   h1 { font-weight:600; margin:16px 0 6px; }
   #game-container { position: relative; width: 800px; height: 500px; background-color: #2c3e50; background-image: url('https://placehold.co/800x500/2c3e50/FFFFFF?text=Fairy+Garden'); border: 3px solid #8e44ad; border-radius: 12px; }
-  #fairy { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background-color: #ff69b4; border-radius: 50%; transform: translate(-50%, -50%); transition: all 0.5s ease; box-shadow: 0 0 15px #ff69b4, 0 0 25px #ff69b4; }
-  #fairy.sad { background-color: #7f8c8d; box-shadow: none; }
+  #fairy { position: absolute; width: 60px; height: 60px; background-size: contain; background-repeat: no-repeat; background-position: center; transform: translate(-50%, -50%); transition: filter 0.5s, box-shadow 0.5s; filter: drop-shadow(0 0 8px #ff69b4); }
+  #fairy.sad { filter: grayscale(80%) brightness(0.7); }
   #ui-panel { margin-top: 10px; width: 800px; background: #34495e; padding: 15px; border-radius: 8px; box-sizing: border-box; }
   .status-bar-container { background: #2c3e50; border-radius: 5px; padding: 3px; margin: 5px 0; }
   .status-bar { height: 20px; border-radius: 3px; transition: width 0.5s; }
   #hunger-bar { background: #e67e22; }
   #happiness-bar { background: #f1c40f; }
+  #cleanliness-bar { background: #1abc9c; }
+  #energy-bar { background: #3498db; } /* Blue for energy */
   .actions { display: flex; justify-content: space-around; margin-top: 10px; }
   .action-button { font-size: 18px; padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; }
   #feed-button { background: #d35400; color: white; }
   #play-button { background: #f39c12; color: white; }
+  #play-button:disabled { background: #7f8c8d; cursor: not-allowed; }
+  #clean-button { background: #16a085; color: white; }
+  .dirt-particle { position: absolute; width: 15px; height: 15px; background: #8b4513; opacity: 0.6; border-radius: 50%; }
   #math-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10; }
   #problem { font-size: 32px; margin-bottom: 15px; }
   #answer { font-size: 24px; width: 120px; text-align: center; }
@@ -33,6 +38,7 @@
 <div id="game-wrapper">
     <div id="game-container">
         <div id="fairy"></div>
+        <div id="dirt-container"></div>
         <div id="math-ui">
             <div id="problem"></div>
             <form id="math-form"><input type="number" id="answer" autocomplete="off" /></form>
@@ -56,9 +62,22 @@
                 <div id="happiness-bar" class="status-bar"></div>
             </div>
         </div>
+        <div>
+            <span>Cleanliness:</span>
+            <div class="status-bar-container">
+                <div id="cleanliness-bar" class="status-bar"></div>
+            </div>
+        </div>
+        <div>
+            <span>Energy:</span>
+            <div class="status-bar-container">
+                <div id="energy-bar" class="status-bar"></div>
+            </div>
+        </div>
         <div class="actions">
             <button id="feed-button" class="action-button">Feed</button>
             <button id="play-button" class="action-button">Play</button>
+            <button id="clean-button" class="action-button">Clean</button>
         </div>
     </div>
 </div>
@@ -69,23 +88,57 @@
 const fairyEl = document.getElementById('fairy');
 const hungerBar = document.getElementById('hunger-bar');
 const happinessBar = document.getElementById('happiness-bar');
+const cleanlinessBar = document.getElementById('cleanliness-bar');
+const energyBar = document.getElementById('energy-bar');
 const mathUI = document.getElementById('math-ui');
 const problemEl = document.getElementById('problem');
 const mathForm = document.getElementById('math-form');
 const gameOverScreen = document.getElementById('game-over-screen');
 const finalScoreEl = document.getElementById('final-score');
+const dirtContainer = document.getElementById('dirt-container');
 
 let fairy = {};
 let gameLoopInterval;
 let score = 0;
 let currentAction = null;
 let currentAnswer = 0;
+let imageAssets = {};
+
+// --- NEW: Asset Loading ---
+const imageUrls = {
+    // Replace this with your own image path, e.g., 'img/fairy.png'
+    fairy: 'https://placehold.co/60x60/0000/FFFFFF?text=🧚' 
+};
+let assetsLoaded = 0;
+const totalAssets = Object.keys(imageUrls).length;
+
+function assetLoaded() {
+    assetsLoaded++;
+    if (assetsLoaded === totalAssets) {
+        fairyEl.style.backgroundImage = `url('${imageAssets.fairy.src}')`;
+        initGame();
+        movementLoop();
+    }
+}
+
+function loadAssets() {
+    imageAssets.fairy = new Image();
+    imageAssets.fairy.src = imageUrls.fairy;
+    imageAssets.fairy.onload = assetLoaded;
+}
 
 function initGame() {
     fairy = {
         hunger: 100,
         happiness: 100,
-        max: 100
+        cleanliness: 100,
+        energy: 100,
+        max: 100,
+        x: 400, // Starting position
+        y: 250,
+        targetX: 400,
+        targetY: 250,
+        moveTimer: 0
     };
     score = 0;
     gameOverScreen.style.display = 'none';
@@ -93,43 +146,96 @@ function initGame() {
     
     document.getElementById('feed-button').disabled = false;
     document.getElementById('play-button').disabled = false;
+    document.getElementById('clean-button').disabled = false;
 
     updateUI();
-    gameLoopInterval = setInterval(gameLoop, 1000);
+    clearInterval(gameLoopInterval); // Clear any existing interval
+    gameLoopInterval = setInterval(logicLoop, 1000);
 }
 
 function updateUI() {
     hungerBar.style.width = `${fairy.hunger}%`;
     happinessBar.style.width = `${fairy.happiness}%`;
+    cleanlinessBar.style.width = `${fairy.cleanliness}%`;
+    energyBar.style.width = `${fairy.energy}%`;
 
     // Fairy gets sad if needs are low
-    if (fairy.hunger < 30 || fairy.happiness < 30) {
+    if (fairy.hunger < 30 || fairy.happiness < 30 || fairy.cleanliness < 30 || fairy.energy < 10) {
         fairyEl.classList.add('sad');
     } else {
         fairyEl.classList.remove('sad');
     }
+
+    // Disable play button if fairy is too tired
+    document.getElementById('play-button').disabled = fairy.energy < 25;
+
+    // Update dirt particles
+    const dirtCount = Math.floor((100 - fairy.cleanliness) / 20);
+    dirtContainer.innerHTML = '';
+    for (let i = 0; i < dirtCount; i++) {
+        const dirt = document.createElement('div');
+        dirt.className = 'dirt-particle';
+        const padding = 20;
+        dirt.style.left = `${Math.random() * (gameContainer.clientWidth - padding * 2) + padding}px`;
+        dirt.style.top = `${Math.random() * (gameContainer.clientHeight - padding * 2) + padding}px`;
+        dirtContainer.appendChild(dirt);
+    }
 }
 
-function gameLoop() {
+function logicLoop() {
     // Needs decrease over time
     fairy.hunger = Math.max(0, fairy.hunger - 2);
     fairy.happiness = Math.max(0, fairy.happiness - (fairy.hunger < 50 ? 4 : 2)); // Happiness drops faster if hungry
+    fairy.cleanliness = Math.max(0, fairy.cleanliness - 1);
+    fairy.energy = Math.min(fairy.max, fairy.energy + 1); // Energy recharges over time
+
+    if (fairy.cleanliness < 40) {
+        fairy.happiness = Math.max(0, fairy.happiness - 2); // Happiness drops faster if dirty
+    }
+    if (fairy.energy < 10) {
+        fairy.happiness = Math.max(0, fairy.happiness - 3); // Happiness drops faster if exhausted
+    }
 
     score++;
     updateUI();
 
     // Check for game over
-    if (fairy.hunger <= 0 || fairy.happiness <= 0) {
+    if (fairy.hunger <= 0 || fairy.happiness <= 0 || fairy.cleanliness <= 0) {
         endGame();
     }
 }
 
+function movementLoop() {
+    // --- Fairy Movement AI ---
+    fairy.moveTimer--;
+    if (fairy.moveTimer <= 0) {
+        // Pick a new destination
+        const padding = 50; // Keep fairy away from edges
+        fairy.targetX = Math.random() * (gameContainer.clientWidth - padding * 2) + padding;
+        fairy.targetY = Math.random() * (gameContainer.clientHeight - padding * 2) + padding;
+        fairy.moveTimer = Math.random() * 180 + 120; // Wait 2-5 seconds before moving again
+    }
+
+    // Smoothly move towards the target (lerping)
+    const speed = 0.03;
+    fairy.x += (fairy.targetX - fairy.x) * speed;
+    fairy.y += (fairy.targetY - fairy.y) * speed;
+
+    // Update the fairy's visual position
+    fairyEl.style.left = `${fairy.x}px`;
+    fairyEl.style.top = `${fairy.y}px`;
+
+    if (gameOverScreen.style.display !== 'flex') {
+        requestAnimationFrame(movementLoop);
+    }
+}
 function endGame() {
     clearInterval(gameLoopInterval);
     finalScoreEl.textContent = score;
     gameOverScreen.style.display = 'flex';
     document.getElementById('feed-button').disabled = true;
     document.getElementById('play-button').disabled = true;
+    document.getElementById('clean-button').disabled = true;
 }
 
 function startAction(action) {
@@ -155,6 +261,9 @@ mathForm.addEventListener('submit', e => {
             fairy.hunger = Math.min(fairy.max, fairy.hunger + 30);
         } else if (currentAction === 'play') {
             fairy.happiness = Math.min(fairy.max, fairy.happiness + 30);
+            fairy.energy = Math.max(0, fairy.energy - 25); // Playing costs energy
+        } else if (currentAction === 'clean') {
+            fairy.cleanliness = Math.min(fairy.max, fairy.cleanliness + 50);
         }
     } else {
         // Penalty for wrong answer
@@ -173,6 +282,7 @@ function closeMathUI() {
 
 document.getElementById('feed-button').addEventListener('click', () => startAction('feed'));
 document.getElementById('play-button').addEventListener('click', () => startAction('play'));
+document.getElementById('clean-button').addEventListener('click', () => startAction('clean'));
 document.querySelector('.restart-button').addEventListener('click', initGame);
 
 // Close math UI if clicked outside the form
@@ -182,7 +292,7 @@ mathUI.addEventListener('click', (e) => {
     }
 });
 
-initGame();
+loadAssets(); // Start loading assets, which will then start the game
 
 </script>
 </body>
