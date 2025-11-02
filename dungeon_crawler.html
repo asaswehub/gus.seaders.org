@@ -32,11 +32,11 @@ const MAP_ROWS = canvas.height / TILE_SIZE;
 // --- Asset Loading ---
 const assets = {};
 const assetUrls = {
-    playerIdle: 'img/wizzard_m_idle_anim_f0.png',
-    playerRun: 'img/wizzard_m_run_anim_f0.png',
-    enemy: 'img/big_demon_idle_anim_f0.png',
-    floor: 'img/tile_0000.png',
-    wall: 'img/tile_0022.png'
+    playerIdle: 'https://placehold.co/16x16/7e22ce/FFFFFF?text=P', // Wizard
+    playerRun: 'https://placehold.co/16x16/9333ea/FFFFFF?text=P',  // Wizard Running
+    enemy: 'https://placehold.co/16x16/be123c/FFFFFF?text=D',      // Demon
+    floor: 'https://placehold.co/16x16/374151/374151?text=.',      // Gray Floor
+    wall: 'https://placehold.co/16x16/78716c/78716c?text=.'       // Stone Wall
 };
 let assetsLoaded = 0;
 const totalAssets = Object.keys(assetUrls).length;
