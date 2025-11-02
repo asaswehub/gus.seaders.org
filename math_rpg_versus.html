@@ -54,11 +54,11 @@ const endMessageEl = document.getElementById('end-message');
 const restartButton = document.getElementById('restart-button');
 
 // Game State
-let player1, player2, activePlayer, currentAnswer;
+let player1, player2, activePlayer, currentAnswer, projectiles;
 
 function initGame() {
-    player1 = { name: "Player 1", x: 150, y: 250, width: 50, height: 80, hp: 100, maxHp: 100, attack: 20, color: '#7e22ce' };
-    player2 = { name: "Player 2", x: 600, y: 250, width: 50, height: 80, hp: 100, maxHp: 100, attack: 20, color: '#2980b9' };
+    player1 = { name: "Player 1", x: 150, y: 250, width: 50, height: 80, hp: 100, maxHp: 100, color: '#7e22ce', hurtTimer: 0 };
+    player2 = { name: "Player 2", x: 600, y: 250, width: 50, height: 80, hp: 100, maxHp: 100, color: '#2980b9', hurtTimer: 0 };
     activePlayer = player1;
     
     gameOverScreen.style.display = 'none';
@@ -66,6 +66,7 @@ function initGame() {
     document.getElementById('attack-button').disabled = false;
     
     messageLogEl.textContent = `${activePlayer.name}'s turn!`;
+    projectiles = [];
     generateNewProblem();
     requestAnimationFrame(draw);
 }
@@ -90,10 +91,21 @@ function drawHealthBar(x, y, width, height, currentHp, maxHp, color) {
 }
 
 function drawWizard(player) {
-    ctx.fillStyle = player.color; // Robe
+    // Hurt animation: flash red
+    if (player.hurtTimer > 0) {
+        ctx.fillStyle = 'red';
+        player.hurtTimer--;
+    } else {
+        ctx.fillStyle = player.color; // Robe
+    }
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.fillStyle = '#f2d4a9'; // Face
     ctx.fillRect(player.x + 10, player.y + 5, player.width - 20, 20);
+}
+
+function drawProjectiles() {
+    ctx.fillStyle = '#f1c40f'; // Yellow magic bolt
+    projectiles.forEach(p => ctx.fillRect(p.x, p.y, 15, 15));
 }
 
 function draw() {
@@ -105,6 +117,7 @@ function draw() {
 
     drawWizard(player1);
     drawWizard(player2);
+    drawProjectiles();
 
     // Health Bars
     drawHealthBar(player1.x, player1.y - 20, player1.width, 10, player1.hp, player1.maxHp, 'green');
@@ -120,29 +133,58 @@ function draw() {
 function switchTurn() {
     activePlayer = (activePlayer === player1) ? player2 : player1;
     messageLogEl.textContent = `${activePlayer.name}'s turn!`;
+    answerInput.disabled = false;
+    document.getElementById('attack-button').disabled = false;
     generateNewProblem();
+}
+
+function updateProjectiles() {
+    projectiles.forEach((p, index) => {
+        // Move projectile
+        p.x += p.dx;
+
+        // Check for hit
+        if ((p.dx > 0 && p.x >= p.target.x) || (p.dx < 0 && p.x <= p.target.x)) {
+            p.target.hp = Math.max(0, p.target.hp - p.damage);
+            p.target.hurtTimer = 15; // Set hurt timer for 15 frames
+            messageLogEl.textContent = `${p.attacker.name} dealt ${p.damage} damage!`;
+            projectiles.splice(index, 1); // Remove projectile
+
+            if (p.target.hp <= 0) {
+                endBattle(p.attacker);
+            } else {
+                setTimeout(switchTurn, 1500); // Wait before switching turns
+            }
+        }
+    });
 }
 
 function handleAnswer(e) {
     e.preventDefault();
+    answerInput.disabled = true;
+    document.getElementById('attack-button').disabled = true;
+
     const userAnswer = parseInt(answerInput.value, 10);
     const opponent = (activePlayer === player1) ? player2 : player1;
 
     if (userAnswer === currentAnswer) {
-        // Player attacks
-        opponent.hp = Math.max(0, opponent.hp - activePlayer.attack);
-        messageLogEl.textContent = `Correct! ${activePlayer.name} dealt ${activePlayer.attack} damage.`;
-        if (opponent.hp <= 0) {
-            endBattle(activePlayer); // The active player won
-            return;
-        }
+        // Correct answer: create a projectile
+        const damage = Math.floor(Math.random() * 11) + 15; // 15-25 damage
+        const projectile = {
+            x: activePlayer.x + activePlayer.width / 2,
+            y: activePlayer.y + activePlayer.height / 2,
+            dx: (activePlayer === player1) ? 10 : -10, // Direction
+            damage: damage,
+            attacker: activePlayer,
+            target: opponent
+        };
+        projectiles.push(projectile);
+        messageLogEl.textContent = `Correct! ${activePlayer.name} casts a spell!`;
     } else {
         // Incorrect answer, turn is missed
         messageLogEl.textContent = `Incorrect! ${activePlayer.name} missed their turn.`;
+        setTimeout(switchTurn, 1500); // Wait before switching turns
     }
-    
-    draw(); // Redraw immediately to show HP changes
-    setTimeout(switchTurn, 1500); // Wait 1.5 seconds before switching turns
 }
 
 function endBattle(winner) {
@@ -157,6 +199,12 @@ function endBattle(winner) {
 
 answerForm.addEventListener('submit', handleAnswer);
 restartButton.addEventListener('click', initGame);
+
+function loop() {
+    draw();
+    updateProjectiles();
+    requestAnimationFrame(loop);
+}
 
 initGame();
 

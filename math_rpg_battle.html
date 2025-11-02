@@ -54,18 +54,40 @@ const endMessageEl = document.getElementById('end-message');
 const restartButton = document.getElementById('restart-button');
 
 // Game State
-let player, enemy, currentAnswer;
+let player, enemy, currentAnswer, audioAssets;
+
+// --- NEW: Audio Asset Loading ---
+const audioAssetUrls = {
+    attack: 'sound/magic-spell.mp3',
+    hurt: 'sound/hit-damage.mp3'
+};
+let assetsLoaded = 0;
+const totalAssets = Object.keys(audioAssetUrls).length;
+
+function assetLoaded() {
+    assetsLoaded++;
+    if (assetsLoaded === totalAssets) {
+        initGame(); // Start the game only after all sounds are ready
+    }
+}
+
+function loadAudio() {
+    audioAssets = {};
+    Object.keys(audioAssetUrls).forEach(key => {
+        audioAssets[key] = new Audio(audioAssetUrls[key]);
+        audioAssets[key].addEventListener('canplaythrough', assetLoaded, { once: true });
+    });
+}
 
 function initGame() {
-    player = { x: 150, y: 250, width: 50, height: 80, hp: 100, maxHp: 100, attack: 25 };
-    enemy = { x: 600, y: 230, width: 80, height: 100, hp: 150, maxHp: 150, attack: 10 };
+    player = { x: 150, y: 250, width: 50, height: 80, hp: 100, maxHp: 100, attack: 25, hurtTimer: 0 };
+    enemy = { x: 600, y: 230, width: 80, height: 100, hp: 150, maxHp: 150, attack: 10, hurtTimer: 0 };
     
     gameOverScreen.style.display = 'none';
     answerInput.disabled = false;
     document.getElementById('attack-button').disabled = false;
     
     generateNewProblem();
-    requestAnimationFrame(draw);
 }
 
 function generateNewProblem() {
@@ -80,7 +102,7 @@ function generateNewProblem() {
 function drawHealthBar(x, y, width, height, currentHp, maxHp, color) {
     ctx.fillStyle = '#333';
     ctx.fillRect(x, y, width, height);
-    const hpWidth = (currentHp / maxHp) * width;
+    const hpWidth = Math.max(0, (currentHp / maxHp) * width);
     ctx.fillStyle = color;
     ctx.fillRect(x, y, hpWidth, height);
     ctx.strokeStyle = 'white';
@@ -88,16 +110,24 @@ function drawHealthBar(x, y, width, height, currentHp, maxHp, color) {
 }
 
 function drawPlayer() {
-    // Simple wizard character
-    ctx.fillStyle = '#7e22ce'; // Robe
+    if (player.hurtTimer > 0) {
+        ctx.fillStyle = 'white';
+        player.hurtTimer--;
+    } else {
+        ctx.fillStyle = '#7e22ce'; // Robe
+    }
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.fillStyle = '#f2d4a9'; // Face
     ctx.fillRect(player.x + 10, player.y + 5, player.width - 20, 20);
 }
 
 function drawEnemy() {
-    // Simple demon character
-    ctx.fillStyle = '#be123c'; // Body
+    if (enemy.hurtTimer > 0) {
+        ctx.fillStyle = 'white';
+        enemy.hurtTimer--;
+    } else {
+        ctx.fillStyle = '#be123c'; // Body
+    }
     ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
     ctx.fillStyle = 'black'; // Horns
     ctx.fillRect(enemy.x, enemy.y, 20, 20);
@@ -131,7 +161,9 @@ function handleAnswer(e) {
 
     if (userAnswer === currentAnswer) {
         // Player attacks
+        audioAssets.attack.cloneNode().play();
         enemy.hp = Math.max(0, enemy.hp - player.attack);
+        enemy.hurtTimer = 15;
         messageLogEl.textContent = `Correct! You dealt ${player.attack} damage.`;
         if (enemy.hp <= 0) {
             endBattle(true); // Player won
@@ -139,7 +171,9 @@ function handleAnswer(e) {
         }
     } else {
         // Enemy attacks
+        audioAssets.hurt.cloneNode().play();
         player.hp = Math.max(0, player.hp - enemy.attack);
+        player.hurtTimer = 15;
         messageLogEl.textContent = `Incorrect! The demon dealt ${enemy.attack} damage.`;
         if (player.hp <= 0) {
             endBattle(false); // Player lost
@@ -148,7 +182,6 @@ function handleAnswer(e) {
     }
     
     generateNewProblem();
-    draw(); // Redraw immediately to show HP changes
 }
 
 function endBattle(playerWon) {
@@ -163,15 +196,18 @@ function endBattle(playerWon) {
         messageLogEl.textContent = "The world is shrouded in darkness...";
     }
     
-    draw();
     gameOverScreen.style.display = 'flex';
 }
 
 answerForm.addEventListener('submit', handleAnswer);
 restartButton.addEventListener('click', initGame);
 
-initGame();
+function loop() {
+    draw();
+    requestAnimationFrame(loop);
+}
 
+loadAudio(); // Start loading assets, which will then call initGame()
 </script>
 </body>
 </html>
