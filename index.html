@@ -4,15 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Basic Static Homepage</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <!-- Load Tailwind CSS from CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Set a default font and slightly darker background for contrast */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f7f7;
-        }
-    </style>
+    <!-- Link to your custom stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="min-h-screen flex flex-col">
 
@@ -34,39 +33,83 @@
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
         <!-- Hero Section -->
-        <div class="text-center mb-12 py-10 bg-white rounded-xl shadow-lg border-b-4 border-indigo-500">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4">
+        <section class="text-center mb-16 py-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-2xl">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-4">
                 Welcome to My Test Page!
             </h1>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p class="text-xl text-indigo-100 max-w-2xl mx-auto">
                 This is a starting point for my new static website. Everything seems to be working for now.
             </p>
-            <a href="#" class="mt-6 inline-block bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 transform hover:scale-105">
+            <a href="#" class="mt-8 inline-block bg-white text-indigo-600 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 transform hover:scale-105">
                 Start Exploring
             </a>
-        </div>
+        </section>
 
         <!-- Content Card for Testing Layout -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="bg-white p-6 rounded-lg shadow-xl border-t-2 border-green-500">
-                <h2 class="text-xl font-semibold text-gray-800 mb-3">Feature A</h2>
-                <p class="text-gray-600 text-sm">
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Card 1 -->
+            <div class="bg-white p-8 rounded-lg shadow-lg transition-transform duration-300 hover:-translate-y-2">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-green-100 rounded-full">
+                        <!-- Heroicon: check-badge -->
+                        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800 ml-4">Feature A</h2>
+                </div>
+                <p class="text-gray-600">
                     This is a placeholder content block. We can use this space to test out different font sizes, line heights, and margins. It's great for checking visual hierarchy.
                 </p>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow-xl border-t-2 border-yellow-500">
-                <h2 class="text-xl font-semibold text-gray-800 mb-3">Feature B</h2>
-                <p class="text-gray-600 text-sm">
+            <!-- Card 2 -->
+            <div class="bg-white p-8 rounded-lg shadow-lg transition-transform duration-300 hover:-translate-y-2">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-yellow-100 rounded-full">
+                        <!-- Heroicon: device-phone-mobile -->
+                        <svg class="w-6 h-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800 ml-4">Feature B</h2>
+                </div>
+                <p class="text-gray-600">
                     Let's see how this card looks when the screen size changes. Tailwind's responsive classes (`md:grid-cols-3`) ensure it adapts smoothly for tablets and desktops.
                 </p>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow-xl border-t-2 border-red-500">
-                <h2 class="text-xl font-semibold text-gray-800 mb-3">Feature C</h2>
-                <p class="text-gray-600 text-sm">
+            <!-- Card 3 -->
+            <div class="bg-white p-8 rounded-lg shadow-lg transition-transform duration-300 hover:-translate-y-2">
+                <div class="flex items-center mb-4">
+                    <div class="p-3 bg-red-100 rounded-full">
+                        <!-- Heroicon: shield-check -->
+                        <svg class="w-6 h-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.017h-.008v-.017z" /></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800 ml-4">Feature C</h2>
+                </div>
+                <p class="text-gray-600">
                     Remember to always use relative units and responsive classes to prevent horizontal scrolling on mobile devices. Testing complete!
                 </p>
             </div>
-        </div>
+        </section>
+
+        <!-- My Projects Section -->
+        <section class="mt-16">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">My Projects</h2>
+            <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="md:flex-shrink-0">
+                    <!-- Replace this with a real screenshot of your game, e.g., src="img/lasagna-quest-preview.jpg" -->
+                    <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/6366f1/ffffff?text=Lasagna\nQuest" alt="Preview of Lasagna Quest game.">
+                </div>
+                <div class="p-8 flex flex-col justify-between">
+                    <div>
+                    <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Browser Game</div>
+                    <a href="lasagna_quest_working_build.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Lasagna Quest: Blockpantry War</a>
+                    <p class="mt-2 text-gray-500">A simple game built with HTML and JavaScript. Use the arrow keys or WASD to move, and press the spacebar to shoot. See if you can capture the lasagna!</p>
+                    </div>
+                    <a href="lasagna_quest_working_build.html" class="mt-6 inline-block bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300">
+                    <button onclick="window.location.href='lasagna_quest_working_build.html'" class="mt-6 self-start bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                        Play Now
+                    </a>
+                    </button>
+                </div>
+            </div>
+        </section>
 
     </main>
 
@@ -76,6 +119,9 @@
             <p>&copy; 2025 My Static Site. All rights reserved. | Built for Testing Purposes.</p>
         </div>
     </footer>
+
+    <!-- Link to your custom script file -->
+    <script src="js/script.js"></script>
 
 </body>
 </html>

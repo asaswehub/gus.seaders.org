@@ -1,0 +1,5 @@
+/* Set a default font and slightly darker background for contrast */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc; /* A slightly cooler gray from Tailwind's palette */
+}
