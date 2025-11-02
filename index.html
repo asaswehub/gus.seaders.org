@@ -12,20 +12,41 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Link to your custom stylesheet -->
     <link rel="stylesheet" href="css/style.css">
+    <script>
+        // Set dark mode class based on localStorage before page loads to prevent flicker
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        // Tell Tailwind to use class-based dark mode
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
     <!-- Header / Navigation Bar -->
-    <header class="bg-white shadow-md">
+    <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50 transition-colors duration-300">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <a href="#" class="text-2xl font-bold text-gray-800 tracking-tight">
+            <a href="#" class="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">
                 My Static Site
             </a>
-            <nav>
-                <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 ml-4">Home</a>
-                <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 ml-4">About</a>
-                <a href="#" class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 ml-4">Contact</a>
-            </nav>
+            <div class="flex items-center">
+                <nav id="nav-menu" class="hidden md:flex items-center">
+                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 ml-4">Home</a>
+                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 ml-4">About</a>
+                    <a href="#" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200 ml-4">Contact</a>
+                </nav>
+                <button id="theme-toggle" class="ml-4 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg id="theme-toggle-dark-icon" class="hidden h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                </button>
+                <button id="hamburger-button" class="md:hidden ml-4 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -35,74 +56,31 @@
         <!-- Hero Section -->
         <section class="text-center mb-16 py-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-2xl">
             <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-4">
-                Welcome to My Test Page!
+                Welcome to the Math Arcade!
             </h1>
-            <p class="text-xl text-indigo-100 max-w-2xl mx-auto">
-                This is a starting point for my new static website. Everything seems to be working for now.
+            <p class="text-xl text-indigo-100 dark:text-indigo-200 max-w-2xl mx-auto">
+                A collection of fun browser games, each with a mathematical twist. Choose a game below to start playing!
             </p>
-            <a href="#" class="mt-8 inline-block bg-white text-indigo-600 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-gray-100 transition duration-300 transform hover:scale-105">
-                Start Exploring
+            <a href="#projects" class="mt-8 inline-block bg-white text-indigo-600 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-gray-100 dark:hover:bg-gray-200 transition duration-300 transform hover:scale-105">
+                Browse Games
             </a>
         </section>
 
-        <!-- Content Card for Testing Layout -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <!-- Card 1 -->
-            <div class="bg-white p-8 rounded-lg shadow-lg transition-transform duration-300 hover:-translate-y-2">
-                <div class="flex items-center mb-4">
-                    <div class="p-3 bg-green-100 rounded-full">
-                        <!-- Heroicon: check-badge -->
-                        <svg class="w-6 h-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-800 ml-4">Feature A</h2>
-                </div>
-                <p class="text-gray-600">
-                    This is a placeholder content block. We can use this space to test out different font sizes, line heights, and margins. It's great for checking visual hierarchy.
-                </p>
-            </div>
-            <!-- Card 2 -->
-            <div class="bg-white p-8 rounded-lg shadow-lg transition-transform duration-300 hover:-translate-y-2">
-                <div class="flex items-center mb-4">
-                    <div class="p-3 bg-yellow-100 rounded-full">
-                        <!-- Heroicon: device-phone-mobile -->
-                        <svg class="w-6 h-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-800 ml-4">Feature B</h2>
-                </div>
-                <p class="text-gray-600">
-                    Let's see how this card looks when the screen size changes. Tailwind's responsive classes (`md:grid-cols-3`) ensure it adapts smoothly for tablets and desktops.
-                </p>
-            </div>
-            <!-- Card 3 -->
-            <div class="bg-white p-8 rounded-lg shadow-lg transition-transform duration-300 hover:-translate-y-2">
-                <div class="flex items-center mb-4">
-                    <div class="p-3 bg-red-100 rounded-full">
-                        <!-- Heroicon: shield-check -->
-                        <svg class="w-6 h-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.017h-.008v-.017z" /></svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-800 ml-4">Feature C</h2>
-                </div>
-                <p class="text-gray-600">
-                    Remember to always use relative units and responsive classes to prevent horizontal scrolling on mobile devices. Testing complete!
-                </p>
-            </div>
-        </section>
-
         <!-- My Projects Section -->
-        <section class="mt-16">
-            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">My Projects</h2>
+        <section id="projects" class="mt-16">
+            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-100 mb-8">My Projects</h2>
             <div class="max-w-4xl mx-auto grid gap-12">
                 <!-- Project 1: Lasagna Quest -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <!-- Replace this with a real screenshot of your game, e.g., src="img/lasagna-quest-preview.jpg" -->
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/6366f1/ffffff?text=Lasagna\nQuest" alt="Preview of Lasagna Quest game.">
                 </div>
                 <div class="p-8 flex flex-col justify-between">
                     <div>
-                    <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold">Browser Game</div>
-                    <a href="lasagna_quest_working_build.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Lasagna Quest: Blockpantry War</a>
-                    <p class="mt-2 text-gray-500">A classic arcade shooter where you must solve math problems to fire your weapon!</p>
+                    <div class="uppercase tracking-wide text-sm text-indigo-500 dark:text-indigo-400 font-semibold">Browser Game</div>
+                    <a href="lasagna_quest_working_build.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Lasagna Quest: Blockpantry War</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">A classic arcade shooter where you must solve math problems to fire your weapon!</p>
                     <div class="mt-4">
                         <h4 class="font-semibold text-gray-700">How to Play:</h4>
                         <p class="text-sm text-gray-600"><strong class="font-medium">Move:</strong> Arrow Keys or WASD</p>
@@ -115,15 +93,15 @@
                 </div>
                 </div>
                 <!-- Project 2: Dragon Fire Quest -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/c0392b/FFFFFF?text=Dragon\\nFire" alt="Preview of Dragon Fire Quest game.">
                 </div>
                 <div class="p-8 flex flex-col justify-between">
                     <div>
-                    <div class="uppercase tracking-wide text-sm text-red-600 font-semibold">Browser Game</div>
-                    <a href="dragon_fire_quest.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Dragon Fire Quest</a>
-                    <p class="mt-2 text-gray-500">Fly your dragon and shoot fireballs by correctly answering math questions.</p>
+                    <div class="uppercase tracking-wide text-sm text-red-600 dark:text-red-500 font-semibold">Browser Game</div>
+                    <a href="dragon_fire_quest.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Dragon Fire Quest</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">Fly your dragon and shoot fireballs by correctly answering math questions.</p>
                     <div class="mt-4">
                         <h4 class="font-semibold text-gray-700">How to Play:</h4>
                         <p class="text-sm text-gray-600"><strong class="font-medium">Move:</strong> Arrow Keys or WASD</p>
@@ -136,15 +114,15 @@
                 </div>
                 </div>
                 <!-- Project 3: Dungeon Crawler -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/555555/FFFFFF?text=Dungeon\\nCrawler" alt="Preview of Dungeon Crawler game.">
                 </div>
                 <div class="p-8 flex flex-col justify-between">
                     <div>
-                    <div class="uppercase tracking-wide text-sm text-gray-600 font-semibold">Tile-Based Game</div>
-                    <a href="dungeon_crawler.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Dungeon Crawler</a>
-                    <p class="mt-2 text-gray-500">Navigate the dungeon and defeat demons by solving math problems in combat.</p>
+                    <div class="uppercase tracking-wide text-sm text-gray-600 dark:text-gray-400 font-semibold">Tile-Based Game</div>
+                    <a href="dungeon_crawler.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Dungeon Crawler</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">Navigate the dungeon and defeat demons by solving math problems in combat.</p>
                     <div class="mt-4">
                         <h4 class="font-semibold text-gray-700">How to Play:</h4>
                         <p class="text-sm text-gray-600"><strong class="font-medium">Move:</strong> Arrow Keys or WASD</p>
@@ -157,15 +135,15 @@
                 </div>
                 </div>
                 <!-- Project 4: Mystery Shack Escape -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/4a2e1a/FFFFFF?text=Mystery\\nShack" alt="Preview of Mystery Shack Escape game.">
                 </div>
                 <div class="p-8 flex flex-col justify-between">
                     <div>
-                    <div class="uppercase tracking-wide text-sm text-yellow-600 font-semibold">Platformer Game</div>
-                    <a href="mystery_shack_escape.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Mystery Shack Escape</a>
-                    <p class="mt-2 text-gray-500">A Gravity Falls platformer where you must solve math problems to open gates and proceed.</p>
+                    <div class="uppercase tracking-wide text-sm text-yellow-600 dark:text-yellow-500 font-semibold">Platformer Game</div>
+                    <a href="mystery_shack_escape.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Mystery Shack Escape</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">A Gravity Falls platformer where you must solve math problems to open gates and proceed.</p>
                     <div class="mt-4">
                         <h4 class="font-semibold text-gray-700">How to Play:</h4>
                         <p class="text-sm text-gray-600"><strong class="font-medium">Move:</strong> Arrow Keys or WASD</p>
@@ -178,15 +156,15 @@
                 </div>
                 </div>
                 <!-- Project 5: Bill's Weirdmageddon Dash -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/f1c40f/000000?text=WEIRD" alt="Preview of Bill's Weirdmageddon Dash game.">
                 </div>
                 <div class="p-8 flex flex-col justify-between">
                     <div>
-                    <div class="uppercase tracking-wide text-sm text-yellow-500 font-semibold">Infinite Runner</div>
-                    <a href="bill_weirdmageddon_dash.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Bill's Weirdmageddon Dash</a>
-                    <p class="mt-2 text-gray-500">Play as Bill Cipher and dodge obstacles. Solve math problems for a temporary shield!</p>
+                    <div class="uppercase tracking-wide text-sm text-yellow-500 dark:text-yellow-400 font-semibold">Infinite Runner</div>
+                    <a href="bill_weirdmageddon_dash.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Bill's Weirdmageddon Dash</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">Play as Bill Cipher and dodge obstacles. Solve math problems for a temporary shield!</p>
                     <div class="mt-4">
                         <h4 class="font-semibold text-gray-700">How to Play:</h4>
                         <p class="text-sm text-gray-600"><strong class="font-medium">Move:</strong> Arrow Keys or WASD. Answer pop-up math for a shield.</p>
@@ -198,15 +176,15 @@
                 </div>
                 </div>
                 <!-- Project 6: Math Challenge -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/27ae60/FFFFFF?text=Math\\nChallenge" alt="Preview of Math Challenge game.">
                 </div>
                 <div class="p-8 flex flex-col justify-between">
                     <div>
-                    <div class="uppercase tracking-wide text-sm text-green-600 font-semibold">Educational Game</div>
-                    <a href="math_challenge.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Math Challenge</a>
-                    <p class="mt-2 text-gray-500">Test your arithmetic skills! Solve as many problems as you can before time runs out.</p>
+                    <div class="uppercase tracking-wide text-sm text-green-600 dark:text-green-500 font-semibold">Educational Game</div>
+                    <a href="math_challenge.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Math Challenge</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">Test your arithmetic skills! Solve as many problems as you can before time runs out.</p>
                     <div class="mt-4">
                         <h4 class="font-semibold text-gray-700">How to Play:</h4>
                         <p class="text-sm text-gray-600"><strong class="font-medium">Goal:</strong> Answer correctly to score points.</p>
@@ -219,15 +197,15 @@
                 </div>
                 </div>
                 <!-- Project 7: Math RPG -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/9b59b6/FFFFFF?text=Math\\nRPG" alt="Preview of Math RPG game.">
                 </div>
                 <div class="p-8 flex flex-col justify-between">
                     <div>
-                    <div class="uppercase tracking-wide text-sm text-purple-600 font-semibold">RPG / Educational</div>
-                    <a href="math_rpg_battle.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Math RPG: Monster Battle</a>
-                    <p class="mt-2 text-gray-500">A game inspired by Prodigy. Defeat monsters by solving math problems to attack!</p>
+                    <div class="uppercase tracking-wide text-sm text-purple-600 dark:text-purple-500 font-semibold">RPG / Educational</div>
+                    <a href="math_rpg_battle.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Math RPG: Monster Battle</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">A game inspired by Prodigy. Defeat monsters by solving math problems to attack!</p>
                     <div class="mt-4">
                         <h4 class="font-semibold text-gray-700">How to Play:</h4>
                         <p class="text-sm text-gray-600"><strong class="font-medium">Goal:</strong> Answer math problems to defeat the enemy.</p>
@@ -240,15 +218,15 @@
                 </div>
                 </div>
                 <!-- Project 8: Math RPG Versus -->
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
                 <div class="md:flex-shrink-0">
                     <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/8e44ad/FFFFFF?text=Wizard\\nDuel" alt="Preview of Math RPG Versus game.">
                 </div>
                 <div class="p-8 flex flex-col justify-between">
                     <div>
-                    <div class="uppercase tracking-wide text-sm text-purple-800 font-semibold">2-Player Versus</div>
-                    <a href="math_rpg_versus.html" class="block mt-1 text-2xl leading-tight font-bold text-black hover:underline">Math RPG: Wizard Duel</a>
-                    <p class="mt-2 text-gray-500">Challenge a friend in a local two-player math battle! Take turns solving problems to attack your opponent.</p>
+                    <div class="uppercase tracking-wide text-sm text-purple-800 dark:text-purple-600 font-semibold">2-Player Versus</div>
+                    <a href="math_rpg_versus.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Math RPG: Wizard Duel</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">Challenge a friend in a local two-player math battle! Take turns solving problems to attack your opponent.</p>
                     <div class="mt-4">
                         <h4 class="font-semibold text-gray-700">How to Play:</h4>
                         <p class="text-sm text-gray-600"><strong class="font-medium">Goal:</strong> Be the last wizard standing.</p>
@@ -266,14 +244,49 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 mt-12 py-6">
+    <footer class="bg-gray-800 dark:bg-black mt-12 py-6">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-400">
-            <p>&copy; 2025 My Static Site. All rights reserved. | Built for Testing Purposes.</p>
+            <p>&copy; 2025 My Static Site. All rights reserved.</p>
         </div>
     </footer>
 
     <!-- Link to your custom script file -->
-    <script src="js/script.js"></script>
+    <script>
+        // Mobile Menu Toggle
+        const hamburgerButton = document.getElementById('hamburger-button');
+        const navMenu = document.getElementById('nav-menu');
+
+        hamburgerButton.addEventListener('click', () => {
+            navMenu.classList.toggle('hidden');
+            // For better mobile UX, you might want to change the menu to be a full-screen overlay
+            // For now, this just toggles visibility.
+        });
+
+        // Dark Mode Toggle
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Set initial icon state
+        if (document.documentElement.classList.contains('dark')) {
+            lightIcon.classList.remove('hidden');
+        } else {
+            darkIcon.classList.remove('hidden');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            darkIcon.classList.toggle('hidden');
+            lightIcon.classList.toggle('hidden');
+
+            if (localStorage.getItem('theme') === 'dark') {
+                localStorage.setItem('theme', 'light');
+                document.documentElement.classList.remove('dark');
+            } else {
+                localStorage.setItem('theme', 'dark');
+                document.documentElement.classList.add('dark');
+            }
+        });
+    </script>
 
 </body>
 </html>
