@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dungeon Crawler</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#1a1a1a; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; margin:0; text-align:center; }
+  h1 { font-weight:600; margin:16px 0 6px; }
+  canvas { background:#000; display:block; margin:16px auto 24px; border:2px solid #555; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .hint { opacity:.8; font-size:14px; margin-bottom:18px; }
+  #loading { font-size: 24px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<h1>Dungeon Crawler</h1>
+<div class="hint">Move: Arrow Keys or WASD.</div>
+<div id="loading">Loading Assets...</div>
+<canvas id="gameCanvas" width="640" height="480" aria-label="Game canvas" style="display: none;"></canvas>
+<script>
+'use strict';
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const loadingText = document.getElementById('loading');
+
+// --- Game Configuration ---
+const TILE_SIZE = 16;
+const MAP_COLS = canvas.width / TILE_SIZE;
+const MAP_ROWS = canvas.height / TILE_SIZE;
+
+// --- Asset Loading ---
+const assets = {};
+const assetUrls = {
+    playerIdle: 'img/wizzard_m_idle_anim_f0.png',
+    playerRun: 'img/wizzard_m_run_anim_f0.png',
+    enemy: 'img/big_demon_idle_anim_f0.png',
+    floor: 'img/tile_0000.png',
+    wall: 'img/tile_0022.png'
+};
+let assetsLoaded = 0;
+const totalAssets = Object.keys(assetUrls).length;
+
+Object.keys(assetUrls).forEach(key => {
+    assets[key] = new Image();
+    assets[key].src = assetUrls[key];
+    assets[key].onload = () => {
+        assetsLoaded++;
+        if (assetsLoaded === totalAssets) {
+            loadingText.style.display = 'none';
+            canvas.style.display = 'block';
+            initGame();
+            requestAnimationFrame(loop);
+        }
+    };
+});
+
+// --- Map Data (1 = wall, 0 = floor) ---
+const levelMap = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,1],
+  [1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1],
+  [1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1],
+  [1,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,1,0,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,0,1,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,1],
+  [1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1],
+  [1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1],
+  [1,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+// --- Game State ---
+let player, enemies, keys;
+
+function initGame(){
+  player = { x: TILE_SIZE * 2, y: TILE_SIZE * 2, size: TILE_SIZE, speed: 2, dx:0, dy:0, isMoving: false, animTimer: 0 };
+  enemies = [ { x: TILE_SIZE * 20, y: TILE_SIZE * 5, size: TILE_SIZE, dx: 1, dy: 0 } ];
+  keys = Object.create(null);
+}
+
+// --- Drawing ---
+function drawMap() {
+    for (let row = 0; row < MAP_ROWS; row++) {
+        for (let col = 0; col < MAP_COLS; col++) {
+            const tile = levelMap[row] && levelMap[row][col];
+            const image = tile === 1 ? assets.wall : assets.floor;
+            if (image) {
+                ctx.drawImage(image, col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+        }
+    }
+}
+
+function drawPlayer() {
+    let playerImage = assets.playerIdle;
+    if (player.isMoving) {
+        // Simple 2-frame animation
+        player.animTimer++;
+        playerImage = (player.animTimer % 20 < 10) ? assets.playerRun : assets.playerIdle;
+    } else {
+        player.animTimer = 0;
+    }
+    ctx.drawImage(playerImage, player.x, player.y, player.size, player.size);
+}
+
+function drawEnemies() {
+    enemies.forEach(e => ctx.drawImage(assets.enemy, e.x, e.y, e.size, e.size));
+}
+
+// --- Updates ---
+function isWall(x, y) {
+    const col = Math.floor(x / TILE_SIZE);
+    const row = Math.floor(y / TILE_SIZE);
+    return levelMap[row] && levelMap[row][col] === 1;
+}
+
+function updatePlayer() {
+    player.dx = (keys['ArrowRight'] || keys['KeyD'] ? 1 : 0) - (keys['ArrowLeft'] || keys['KeyA'] ? 1 : 0);
+    player.dy = (keys['ArrowDown'] || keys['KeyS'] ? 1 : 0) - (keys['ArrowUp'] || keys['KeyW'] ? 1 : 0);
+
+    player.isMoving = player.dx !== 0 || player.dy !== 0;
+
+    let nextX = player.x + player.dx * player.speed;
+    let nextY = player.y + player.dy * player.speed;
+
+    // Collision detection
+    if (!isWall(nextX, player.y) && !isWall(nextX + player.size - 1, player.y) &&
+        !isWall(nextX, player.y + player.size - 1) && !isWall(nextX + player.size - 1, player.y + player.size - 1)) {
+        player.x = nextX;
+    }
+    if (!isWall(player.x, nextY) && !isWall(player.x + player.size - 1, nextY) &&
+        !isWall(player.x, nextY + player.size - 1) && !isWall(player.x + player.size - 1, nextY + player.size - 1)) {
+        player.y = nextY;
+    }
+}
+
+function updateEnemies() {
+    enemies.forEach(e => {
+        let nextX = e.x + e.dx;
+        if (isWall(nextX, e.y) || isWall(nextX + e.size -1, e.y)) {
+            e.dx *= -1;
+        } else {
+            e.x += e.dx;
+        }
+    });
+}
+
+// --- Controls ---
+addEventListener('keydown', e => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+    keys[e.code] = true;
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+// --- Main Loop ---
+function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    drawMap();
+    drawPlayer();
+    drawEnemies();
+
+    updatePlayer();
+    updateEnemies();
+
+    requestAnimationFrame(loop);
+}
+
+</script>
+</body>
+</html>

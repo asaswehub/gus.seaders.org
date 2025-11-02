@@ -31,29 +31,48 @@ const uiScore = document.getElementById('score');
 const uiInventory = document.getElementById('inventory');
 const loadingText = document.getElementById('loading');
 
-// --- NEW: Image Asset Loading ---
+// --- UPDATED: Image and Audio Asset Loading ---
 const assets = {};
+const audioAssets = {}; // New object for audio
+
 const assetUrls = {
     player: 'https://placehold.co/100x100/f39c12/FFFFFF?text=Orange\\nDragon', // Replace with 'img/orange-dragon.png'
     enemy: 'https://placehold.co/100x100/3498db/FFFFFF?text=Blue\\nDragon',   // Replace with 'img/blue-dragon.png'
     item: 'https://placehold.co/100x100/f1c40f/FFFFFF?text=Chalice'       // Replace with 'img/chalice.png'
 };
+
+// New audio assets
+const audioAssetUrls = {
+    fireball: 'sound/fireball.mp3' // Path to your downloaded sound
+};
+
 let assetsLoaded = 0;
-const totalAssets = Object.keys(assetUrls).length;
+// Combine image and audio asset counts
+const totalAssets = Object.keys(assetUrls).length + Object.keys(audioAssetUrls).length;
+
+function assetLoaded() {
+    assetsLoaded++;
+    if (assetsLoaded === totalAssets) {
+        // All assets are loaded, start the game
+        loadingText.style.display = 'none';
+        canvas.style.display = 'block';
+        initGame();
+        requestAnimationFrame(loop);
+    }
+}
 
 Object.keys(assetUrls).forEach(key => {
     assets[key] = new Image();
     assets[key].src = assetUrls[key];
-    assets[key].onload = () => {
-        assetsLoaded++;
-        if (assetsLoaded === totalAssets) {
-            // All assets are loaded, start the game
-            loadingText.style.display = 'none';
-            canvas.style.display = 'block';
-            initGame();
-            requestAnimationFrame(loop);
-        }
-    };
+    assets[key].onload = assetLoaded;
+});
+
+// Load audio assets
+Object.keys(audioAssetUrls).forEach(key => {
+    audioAssets[key] = new Audio();
+    audioAssets[key].src = audioAssetUrls[key];
+    // 'canplaythrough' event ensures the whole file is ready
+    audioAssets[key].oncanplaythrough = assetLoaded;
 });
 
 // State
@@ -151,6 +170,10 @@ addEventListener('keydown', e=>{
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
   keys[e.code] = true;
   if(e.code==='Space' && player.attackCooldown===0){
+    // --- PLAY SOUND ON SHOOT ---
+    // Clone the audio node to allow for rapid, overlapping sounds
+    audioAssets.fireball.cloneNode().play();
+
     projectiles.push({ x: player.x + player.size/2, y: player.y + player.size/2, dx: 8, dy: 0, radius: 8 });
     player.attackCooldown = 20;
   }
