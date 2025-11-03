@@ -13,10 +13,15 @@
   #math-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); padding: 20px; border-radius: 10px; display: none; }
   #problem { font-size: 24px; margin-bottom: 10px; }
   #answer { font-size: 20px; width: 100px; text-align: center; }
+  .back-link { color: #bdc3c7; text-decoration: none; margin-bottom: 10px; display: inline-block; }
+  .back-link:hover { color: #ecf0f1; text-decoration: underline; }
 </style>
 </head>
 <body>
 <h1>Lasagna Quest: Blockpantry War</h1>
+<div>
+    <a href="index.html" class="back-link">&larr; Back to Home</a>
+</div>
 <div id="ui">Health: <span id="health">100</span> | Score: <span id="score">0</span> | Inventory: <span id="inventory">None</span></div>
 <div id="math-ui">
     <div id="problem"></div>
