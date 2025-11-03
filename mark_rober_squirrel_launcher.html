@@ -104,6 +104,38 @@ function generateProblems() {
     powerProblemEl.textContent = `${powerNum1} + ${powerNum2}`;
 }
 
+function drawTrajectory() {
+    const angle = parseInt(angleInput.value, 10);
+    const power = parseInt(powerInput.value, 10);
+
+    // Don't draw if inputs are invalid
+    if (isNaN(angle) || isNaN(power) || isFlying) {
+        return;
+    }
+
+    // Get initial velocities
+    const angleInRadians = (90 - angle) * (Math.PI / 180);
+    let tempDx = Math.cos(angleInRadians) * (power / 2);
+    let tempDy = -Math.sin(angleInRadians) * (power / 2);
+
+    // Get starting position
+    let tempX = squirrel.x + squirrel.width / 2;
+    let tempY = squirrel.y + squirrel.height / 2;
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // Semi-transparent white dots
+
+    // Simulate physics steps to draw the path
+    for (let i = 0; i < 120; i++) {
+        tempX += tempDx;
+        tempY += tempDy;
+        tempDy += GRAVITY;
+
+        if (i % 4 === 0) { // Draw a dot every 4 steps
+            ctx.fillRect(tempX, tempY, 3, 3);
+        }
+    }
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     // Ground
@@ -123,6 +155,9 @@ function draw() {
     ctx.fillRect(target.x, target.y, target.width, target.height);
     ctx.fillStyle = '#f1c40f'; // Walnuts
     ctx.fillRect(target.x + 5, target.y + 5, target.width - 10, 10);
+
+    // Draw trajectory preview
+    drawTrajectory();
 }
 
 function launch() {
@@ -197,6 +232,10 @@ function endGame(won) {
 
 launchButton.addEventListener('click', launch);
 document.querySelector('.restart-button').addEventListener('click', initGame);
+// --- NEW: Add event listeners to update trajectory on input ---
+angleInput.addEventListener('input', draw);
+powerInput.addEventListener('input', draw);
+
 
 initGame();
 
