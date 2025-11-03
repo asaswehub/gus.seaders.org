@@ -15,10 +15,15 @@
   #math-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; display: none; z-index: 10; }
   #problem { font-size: 24px; margin-bottom: 10px; }
   #answer { font-size: 20px; width: 100px; text-align: center; }
+  .back-link { color: #bdc3c7; text-decoration: none; margin-bottom: 10px; display: inline-block; }
+  .back-link:hover { color: #ecf0f1; text-decoration: underline; }
 </style>
 </head>
 <body>
 <h1>Dungeon Crawler</h1>
+<div>
+    <a href="index.html" class="back-link">&larr; Back to Home</a>
+</div>
 <div id="info-bar">Health: <span id="health">100</span></div>
 <div id="loading">Loading Assets...</div>
 <div id="math-ui">

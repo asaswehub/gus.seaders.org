@@ -30,11 +30,16 @@
   #answer { font-size: 24px; width: 120px; text-align: center; }
   #game-over-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 20; }
   .restart-button { font-size: 24px; padding: 10px 20px; margin-top: 20px; cursor: pointer; }
+  .back-link { color: #bdc3c7; text-decoration: none; margin-bottom: 10px; display: inline-block; }
+  .back-link:hover { color: #ecf0f1; text-decoration: underline; }
 </style>
 </head>
 <body>
 
 <h1>Fairy Care Simulator</h1>
+<div>
+    <a href="index.html" class="back-link">&larr; Back to Home</a>
+</div>
 <div id="game-wrapper">
     <div id="game-container">
         <div id="fairy"></div>
