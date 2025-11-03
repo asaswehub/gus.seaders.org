@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Squirrel Launcher 2.0</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#1a2b3c; color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; margin:0; text-align:center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+  h1 { font-weight:600; margin:16px 0 6px; }
+  canvas { background:#87ceeb; display:block; border:2px solid #666; }
+  #ui-panel { margin-top: 10px; width: 800px; background: #34495e; padding: 15px; border-radius: 8px; box-sizing: border-box; }
+  .controls { display: flex; justify-content: space-around; align-items: center; }
+  .control-group { text-align: center; }
+  .control-group label { display: block; font-size: 14px; color: #bdc3c7; }
+  .control-group input { font-size: 20px; width: 100px; text-align: center; background: #2c3e50; border: 1px solid #95a5a6; border-radius: 4px; color: white; }
+  #launch-button { font-size: 20px; padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; background: #c0392b; color: white; }
+  #launch-button:disabled { background: #7f8c8d; }
+  #message-log { margin-top: 10px; height: 24px; font-size: 18px; color: #f1c40f; }
+  #game-over-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 20; }
+  .restart-button { font-size: 24px; padding: 10px 20px; margin-top: 20px; cursor: pointer; }
+  .back-link { color: #bdc3c7; text-decoration: none; margin-bottom: 10px; display: inline-block; }
+  .back-link:hover { color: #ecf0f1; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>Squirrel Launcher 2.0</h1>
+<a href="index.html" class="back-link">&larr; Back to Home</a>
+<div id="game-wrapper">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div id="ui-panel">
+        <div class="controls">
+            <div class="control-group">
+                <label for="angle-input">Angle (Solve: <span id="angle-problem"></span>)</label>
+                <input type="number" id="angle-input" placeholder="?">
+            </div>
+            <div class="control-group">
+                <label for="power-input">Power (Solve: <span id="power-problem"></span>)</label>
+                <input type="number" id="power-input" placeholder="?">
+            </div>
+            <button id="launch-button">Launch!</button>
+        </div>
+        <div id="message-log">Calibrate the launcher by solving the math problems!</div>
+    </div>
+</div>
+<div id="game-over-screen">
+    <h2 id="end-message"></h2>
+    <button class="restart-button">Try Again</button>
+</div>
+
+<script>
+'use strict';
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// UI Elements
+const angleProblemEl = document.getElementById('angle-problem');
+const powerProblemEl = document.getElementById('power-problem');
+const angleInput = document.getElementById('angle-input');
+const powerInput = document.getElementById('power-input');
+const launchButton = document.getElementById('launch-button');
+const messageLog = document.getElementById('message-log');
+const gameOverScreen = document.getElementById('game-over-screen');
+const endMessageEl = document.getElementById('end-message');
+
+const GRAVITY = 0.2;
+let squirrel, target, launcher, problems, isFlying;
+
+function initGame() {
+    launcher = { x: 50, y: 450, width: 50, height: 20 };
+    squirrel = { x: launcher.x + 20, y: launcher.y - 10, width: 20, height: 10, dx: 0, dy: 0 };
+    target = { 
+        x: Math.random() * 350 + 400, // Random X between 400 and 750
+        y: Math.random() * 250 + 100, // Random Y between 100 and 350
+        width: 40, 
+        height: 40 
+    };
+    isFlying = false;
+
+    angleInput.value = '';
+    powerInput.value = '';
+    launchButton.disabled = false;
+    gameOverScreen.style.display = 'none';
+    messageLog.textContent = 'Calibrate the launcher by solving the math problems!';
+
+    generateProblems();
+    draw();
+}
+
+function generateProblems() {
+    const angleNum1 = Math.floor(Math.random() * 8) + 2; // 2-9
+    const angleNum2 = Math.floor(Math.random() * 8) + 2;
+    const powerNum1 = Math.floor(Math.random() * 10) + 5; // 5-14
+    const powerNum2 = Math.floor(Math.random() * 10) + 5;
+
+    problems = {
+        angle: angleNum1 * angleNum2,
+        power: powerNum1 + powerNum2
+    };
+
+    angleProblemEl.textContent = `${angleNum1} × ${angleNum2}`;
+    powerProblemEl.textContent = `${powerNum1} + ${powerNum2}`;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Ground
+    ctx.fillStyle = '#27ae60';
+    ctx.fillRect(0, 450, canvas.width, 50);
+
+    // Launcher
+    ctx.fillStyle = '#7f8c8d';
+    ctx.fillRect(launcher.x, launcher.y, launcher.width, launcher.height);
+
+    // Squirrel
+    ctx.fillStyle = '#8b4513';
+    ctx.fillRect(squirrel.x, squirrel.y, squirrel.width, squirrel.height);
+
+    // Target (Bird Feeder)
+    ctx.fillStyle = '#d2691e';
+    ctx.fillRect(target.x, target.y, target.width, target.height);
+    ctx.fillStyle = '#f1c40f'; // Walnuts
+    ctx.fillRect(target.x + 5, target.y + 5, target.width - 10, 10);
+}
+
+function launch() {
+    const angle = parseInt(angleInput.value, 10);
+    const power = parseInt(powerInput.value, 10);
+
+    if (isNaN(angle) || isNaN(power)) {
+        messageLog.textContent = 'Please solve both problems first!';
+        return;
+    }
+
+    if (angle !== problems.angle || power !== problems.power) {
+        messageLog.textContent = 'Incorrect calibration! Try again.';
+        generateProblems();
+        return;
+    }
+
+    launchButton.disabled = true;
+    isFlying = true;
+
+    // Convert angle (degrees) and power to velocity vectors
+    const angleInRadians = (90 - angle) * (Math.PI / 180); // Adjust for canvas coordinates
+    squirrel.dx = Math.cos(angleInRadians) * (power / 2);
+    squirrel.dy = -Math.sin(angleInRadians) * (power / 2);
+
+    messageLog.textContent = 'Launch in 3... 2... 1...';
+    setTimeout(physicsLoop, 1000);
+}
+
+function physicsLoop() {
+    if (!isFlying) return;
+
+    // Update position
+    squirrel.x += squirrel.dx;
+    squirrel.y += squirrel.dy;
+
+    // Apply gravity
+    squirrel.dy += GRAVITY;
+
+    draw(); // Redraw the scene
+
+    // Check for collision with target
+    if (squirrel.x < target.x + target.width &&
+        squirrel.x + squirrel.width > target.x &&
+        squirrel.y < target.y + target.height &&
+        squirrel.y + squirrel.height > target.y) {
+        isFlying = false;
+        endGame(true);
+        return;
+    }
+
+    // Check if off-screen
+    if (squirrel.y > canvas.height || squirrel.x > canvas.width) {
+        isFlying = false;
+        endGame(false);
+        return;
+    }
+
+    requestAnimationFrame(physicsLoop);
+}
+
+function endGame(won) {
+    if (won) {
+        endMessageEl.textContent = "Success! The squirrel got the walnuts!";
+        messageLog.textContent = "Mission Accomplished!";
+    } else {
+        endMessageEl.textContent = "Mission Failed. The squirrel missed.";
+        messageLog.textContent = "Recalibrate and try again!";
+    }
+    gameOverScreen.style.display = 'flex';
+}
+
+launchButton.addEventListener('click', launch);
+document.querySelector('.restart-button').addEventListener('click', initGame);
+
+initGame();
+
+</script>
+</body>
+</html>
