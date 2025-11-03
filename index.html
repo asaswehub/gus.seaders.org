@@ -50,16 +50,27 @@
     <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
         <!-- Hero Section -->
-        <section class="text-center mb-16 py-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-2xl">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-4">
-                Welcome to the Math Arcade!
-            </h1>
-            <p class="text-xl text-indigo-100 dark:text-indigo-200 max-w-2xl mx-auto">
-                A collection of fun browser games, each with a mathematical twist. Choose a game below to start playing!
-            </p>
-            <a href="#projects" class="mt-8 inline-block bg-white text-indigo-600 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-gray-100 dark:hover:bg-gray-200 transition duration-300 transform hover:scale-105">
-                Browse Games
-            </a>
+        <section class="relative h-96 flex items-center justify-center text-center mb-16 rounded-xl shadow-2xl overflow-hidden">
+            <!-- Video Background -->
+            <video autoplay loop muted playsinline class="absolute z-0 w-auto min-w-full min-h-full max-w-none">
+                <!-- You can replace this with your own video file, e.g., src="video/arcade_background.mp4" -->
+                <source src="https://cdn.pixabay.com/video/2022/09/20/130315-752538111_large.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <!-- Overlay for text readability -->
+            <div class="absolute inset-0 bg-black opacity-50 z-10"></div>
+            <!-- Content -->
+            <div class="relative z-20 px-4">
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-4">
+                    Welcome to the Math Arcade!
+                </h1>
+                <p class="text-xl text-gray-200 max-w-2xl mx-auto">
+                    A collection of fun browser games, each with a mathematical twist. Choose a game below to start playing!
+                </p>
+                <a href="#projects" class="mt-8 inline-block bg-white text-indigo-600 font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-gray-100 dark:hover:bg-gray-200 transition duration-300 transform hover:scale-105">
+                    Browse Games
+                </a>
+            </div>
         </section>
 
         <!-- My Projects Section -->
@@ -272,6 +283,30 @@
                     </div>
                     </div>
                     <button onclick="window.location.href='fairy_care_simulator.html'" class="mt-6 self-start bg-pink-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-pink-600 transition duration-300 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50">
+                        Play Now
+                    </button>
+                </div>
+                </div>
+                <!-- Project 11: Mark Rober Game -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden md:flex">
+                <div class="md:flex-shrink-0">
+                    <img class="h-56 w-full object-cover md:w-56" src="https://placehold.co/800x600/f39c12/FFFFFF?text=Squirrel\\nLauncher" alt="Preview of Squirrel Launcher game.">
+                </div>
+                <div class="p-8 flex flex-col justify-between">
+                    <div>
+                    <div class="uppercase tracking-wide text-sm text-yellow-700 dark:text-yellow-500 font-semibold">Physics Puzzle Game</div>
+                    <a href="mark_rober_squirrel_launcher.html" class="block mt-1 text-2xl leading-tight font-bold text-black dark:text-white hover:underline">Squirrel Launcher 2.0</a>
+                    <p class="mt-2 text-gray-500 dark:text-gray-400">Inspired by Mark Rober, use math to calibrate the angle and power of a launcher to send a squirrel to the ultimate prize!</p>
+                    <div class="mt-4">
+                        <h4 class="font-semibold text-gray-700">How to Play:</h4>
+                        <p class="text-sm text-gray-600"><strong class="font-medium">Goal:</strong> Hit the bird feeder with the squirrel.</p>
+                        <p class="text-sm text-gray-600"><strong class="font-medium">Controls:</strong> Solve the math problems to set the angle and power, then click "Launch!".</p>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                        <a href="https://www.youtube.com/watch?v=hFZFjoX2cGg" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Watch the video that inspired this game! &rarr;</a>
+                    </p>
+                    </div>
+                    <button onclick="window.location.href='mark_rober_squirrel_launcher.html'" class="mt-6 self-start bg-yellow-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-yellow-700 transition duration-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50">
                         Play Now
                     </button>
                 </div>

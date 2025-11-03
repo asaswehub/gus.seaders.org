@@ -10,10 +10,15 @@
   h1 { font-weight:600; margin:16px 0 6px; }
   canvas { background:#87ceeb; display:block; margin:16px auto 24px; border:2px solid #4a2e1a; }
   .hint { opacity:.8; font-size:14px; margin-bottom:18px; }
+  .back-link { color: #ecf0f1; text-decoration: none; margin-bottom: 10px; display: inline-block; }
+  .back-link:hover { color: #ffffff; text-decoration: underline; }
 </style>
 </head>
 <body>
 <h1>Mystery Shack Escape</h1>
+<div>
+    <a href="index.html" class="back-link">&larr; Back to Home</a>
+</div>
 <div class="hint">Move: Arrow Keys or WASD. Jump: Spacebar or Up Arrow.</div>
 <canvas id="gameCanvas" width="800" height="480" aria-label="Game canvas"></canvas>
 <script>
