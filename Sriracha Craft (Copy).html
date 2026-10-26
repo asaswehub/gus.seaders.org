@@ -6,7 +6,7 @@
 <div id="xp"></div>
 <div id="hp"></div><div id="fl"></div>
 <button id="hb">🤖</button><div id="hv"><div class="card" style="width:min(420px,92vw)"><b>🤖 Code Helper</b><div id="hl"></div><input id="hi" placeholder="Ask about the game or its code..." maxlength="300" autocomplete="off"><div style="display:flex;gap:8px"><button id="hs">Send</button><button id="hc">Close</button></div><small>Powered by Claude · answers can be wrong</small></div></div>
-<div id="ap"><div class="card"><div id="apt"></div><input id="api" type="password" autocomplete="off" placeholder="Passphrase"><div style="display:flex;gap:8px"><button id="apo">OK</button><button id="apx">Cancel</button></div><div id="ape"></div></div></div><div id="x"></div><div id="hud"></div><div id="t"><div id="j"><div id="jk"></div></div><div class="b" id="bj" style="right:62px;bottom:108px">Jump</div><div class="b" id="bb" style="right:24px;bottom:32px">Break</div><div class="b" id="bp" style="right:100px;bottom:32px">Place</div></div>
+<div id="ap"><div class="card"><div id="apt"></div><input id="api" type="password" autocomplete="off" placeholder="Passphrase"><div style="display:flex;gap:8px"><button id="enc">🔐 Encrypt Save</button><button id="apo">OK</button><button id="apx">Cancel</button></div><div id="ape"></div></div></div><div id="x"></div><div id="hud"></div><div id="t"><div id="j"><div id="jk"></div></div><div class="b" id="bj" style="right:62px;bottom:108px">Jump</div><div class="b" id="bb" style="right:24px;bottom:32px">Break</div><div class="b" id="bp" style="right:100px;bottom:32px">Place</div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>(()=>{'use strict';
 const W=48,H=32,D=48,N=['','Grass','Dirt','Stone','Sand','Sriracha','Wood','Leaves'];
@@ -88,9 +88,20 @@ cv.addEventListener('touchend',lend);cv.addEventListener('touchcancel',lend);
 const FORCE_OFF=false,SALT='c75865076f71efb29bfda9d3f015f1c5',HASH='7d187835eb1e95c8e98f24a9b5fbf6f157b961e5aa57e8d911607906142d831e',ITER=200000;
 let OFF=false,raf=0,fails=0;
 const st={get(){try{return localStorage.getItem('sc_off')==='1'}catch(e){return false}},set(v){try{v?localStorage.setItem('sc_off','1'):localStorage.removeItem('sc_off')}catch(e){}}};
+function bytesToHex(bytes){return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('')}
+function hexToBytes(hex){const out=[];for(let i=0;i<hex.length;i+=2)out.push(parseInt(hex.slice(i,i+2),16));return new Uint8Array(out)}
 async function hashPw(pw){const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']);
 const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:Uint8Array.from(SALT.match(/../g),h=>parseInt(h,16)),iterations:ITER,hash:'SHA-256'},km,256);
 return[...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function encryptCurrentSave(passphrase){if(!(window.crypto&&crypto.subtle))throw new Error('secure_context');
+const payload=JSON.stringify({xp,lvl,sel,HP,INV:INV.slice(),P:{x:P.x,y:P.y,z:P.z,yaw:P.yaw,pitch:P.pitch}});
+const salt=crypto.getRandomValues(new Uint8Array(16));const iv=crypto.getRandomValues(new Uint8Array(12));
+const keyMaterial=await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['encrypt']);
+const out=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(payload));
+const record={v:1,salt:bytesToHex(salt),iv:bytesToHex(iv),data:bytesToHex(new Uint8Array(out))};
+try{localStorage.setItem('sc_encrypted_save',JSON.stringify(record));}catch(e){throw new Error('storage')}
+return record}
 const LK=$('lk'),AP=$('ap'),API=$('api'),APE=$('ape');
 function setOff(v){OFF=v;if(v){if(document.exitPointerLock)document.exitPointerLock();for(const c in k)k[c]=0;jx=jy=0;playing=false;
 M.style.display='none';$('t').style.display='none';cv.style.display='none';hl.visible=false;LK.style.display='flex';$('lka').style.display=FORCE_OFF?'none':''}
@@ -101,6 +112,7 @@ async function submitAdmin(){const b=$('apo');if(!(window.crypto&&crypto.subtle)
 b.disabled=true;let ok=false;try{ok=(await hashPw(API.value))===HASH}catch(e){}
 if(ok){fails=0;closeAdmin();setOff(!OFF);if(!FORCE_OFF)st.set(OFF)}else{fails++;APE.textContent='Wrong passphrase.';API.value='';await new Promise(r=>setTimeout(r,Math.min(1000*fails,8000)))}b.disabled=false}
 $('mka').onclick=e=>{e.stopPropagation();openAdmin()};$('lka').onclick=openAdmin;$('apx').onclick=closeAdmin;$('apo').onclick=submitAdmin;
+$('enc').onclick=async()=>{const pass=API.value.trim();if(!pass){APE.textContent='Enter a passphrase to encrypt the save.';API.focus();return}try{await encryptCurrentSave(pass);APE.textContent='Encrypted save stored locally.';}catch(e){APE.textContent=e&&e.message==='secure_context'?'Needs a secure (https) page.':e&&e.message==='storage'?'Storage is blocked in this browser.':'Encryption failed.';}};
 API.addEventListener('keydown',e=>{if(e.key==='Enter')submitAdmin();if(e.key==='Escape')closeAdmin()});
 // ---- Animals: pigs, cows, chickens that wander; left click hits one ----
 const AN=[],KINDS=[
