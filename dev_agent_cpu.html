@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dev agent (CPU version)</title>
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--ink:#14202b;--muted:#5d6b78;--line:#d3dae1;--on:#0f766e;--warn:#b45309;--code:#0f1b24;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#14181c;--panel:#1d2329;--ink:#e8edf1;--muted:#93a1ad;--line:#2e373f;--on:#2dd4bf;--warn:#f59e0b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:740px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{padding:24px 20px 14px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:24px}.sub{margin:4px 0 0;color:var(--muted);font-size:14px}
+.panel{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+label{display:block;font-size:13px;color:var(--muted);margin:0 0 4px}
+select,textarea{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:14px}
+.row{display:flex;gap:8px;align-items:center;margin-top:8px}
+button.go{background:var(--on);color:#04201c;border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer}
+button:disabled,select:disabled{opacity:.5;cursor:default}
+.prog{height:6px;background:var(--bg);border-radius:3px;margin-top:10px;overflow:hidden}.prog div{height:100%;width:0;background:var(--on)}
+#status{font-size:13px;margin-top:8px;color:var(--muted)}#status.ok{color:var(--on)}#status.bad{color:var(--warn)}
+.tg{margin-top:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:8px 12px;cursor:pointer;font:inherit}
+.tg[aria-checked=true]{background:var(--on);border-color:var(--on);color:#04201c}.tg b{display:block;font-size:14px}.tg span{font-size:12px;opacity:.85}
+main{flex:1;padding:20px;display:flex;flex-direction:column;gap:22px}
+.u{align-self:flex-end;max-width:85%;background:var(--ink);color:var(--bg);border-radius:16px;padding:8px 14px;white-space:pre-wrap}
+.ans{font:17px/1.65 Georgia,"Times New Roman",serif;white-space:pre-wrap}
+pre{background:var(--code);color:#e6edf3;border-radius:8px;padding:12px;overflow-x:auto;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;margin:8px 0}
+.note{font-size:14px;margin-bottom:4px;color:var(--muted);font-style:italic}
+details.run{font-size:14px;margin-bottom:8px}details.run summary{cursor:pointer;color:var(--on)}details.run.bad summary{color:var(--warn)}
+.busy{font-size:14px;color:var(--muted)}.err{font-size:14px;color:var(--warn);border:1px solid var(--warn);border-radius:8px;padding:8px 12px;white-space:pre-wrap}
+.hint p{font:18px Georgia,serif;margin:0 0 10px}.hint button{display:block;margin:0 0 8px;text-align:left;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:6px 12px;cursor:pointer;font:inherit;font-size:14px}
+footer{position:sticky;bottom:0;background:var(--bg);padding:8px 20px 20px}
+.box{display:flex;gap:8px;align-items:flex-end;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:8px 10px}
+.box textarea{border:0;background:transparent;resize:none;outline:none;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace}
+#send{width:38px;height:38px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-size:18px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Dev agent</h1>
+<p class="sub">An AI that writes code, runs it, finds bugs and fixes them. It runs entirely inside this page, on your own processor, so no graphics card or hardware acceleration is needed. No API key, no account, nothing to install.</p>
+<div class="panel">
+<label for="model">Model</label>
+<select id="model" disabled><option>Loading the CPU engine…</option></select>
+<div class="row"><button class="go" id="load" disabled>Download and start</button></div>
+<div class="prog"><div id="bar"></div></div>
+<div id="status">Starting…</div>
+<p class="sub" style="font-size:12px;margin-top:8px">The first start downloads the model once (0.4 to 2 GB depending on the size you pick) and keeps it for next time. Needs an internet connection for that first download. It runs on the CPU, so expect a few words per second; the 0.5B model is fastest, the 3B model is smartest. Smaller models make more mistakes.</p>
+</div>
+<button class="tg" id="tcode" role="switch" aria-checked="true"><b>Run code: on</b><span>Tests JavaScript in a sandbox before answering</span></button>
+</header>
+<main id="log"><div class="hint" id="hint"><p>Paste code with a bug, or describe something to build.</p></div></main>
+<footer><div class="box"><textarea id="in" rows="2" disabled placeholder="Load a model first. Then paste code or ask for something. Shift+Enter adds a new line."></textarea><button id="send" aria-label="Send" disabled>↑</button></div></footer>
+</div>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; };
+const MAX_STEPS = 6, RUN = /```run[ \t]*\n([\s\S]*?)```/;
+const STARTERS = ["Find the bug in this: function avg(a){let s=0;for(let i=0;i<=a.length;i++)s+=a[i];return s/a.length}", "Write a debounce function and prove it works by testing it", "Write a function that checks if a string is a palindrome, then test it on tricky inputs"];
+let webllm = null, engine = null, busy = false, stopFlag = false, code = true, api = [];
+const setStatus = (cls, t) => { $("status").className = cls; $("status").textContent = t; };
+STARTERS.forEach((s) => { const b = el("button", "", s); b.onclick = () => send(s); $("hint").appendChild(b); });
+$("tcode").onclick = () => { code = $("tcode").getAttribute("aria-checked") !== "true"; $("tcode").setAttribute("aria-checked", code); $("tcode").querySelector("b").textContent = "Run code: " + (code ? "on" : "off"); };
+
+/* ---- CPU engine (llama.cpp compiled to WebAssembly, no GPU needed) ---- */
+const MODELS = [
+  { name: "Qwen2.5-Coder 0.5B  (about 0.4 GB, fastest)", repo: "Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF", file: "qwen2.5-coder-0.5b-instruct-q4_k_m.gguf" },
+  { name: "Qwen2.5-Coder 1.5B  (about 1.1 GB, balanced)", repo: "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF", file: "qwen2.5-coder-1.5b-instruct-q4_k_m.gguf" },
+  { name: "Qwen2.5-Coder 3B  (about 2 GB, smartest, slowest)", repo: "Qwen/Qwen2.5-Coder-3B-Instruct-GGUF", file: "qwen2.5-coder-3b-instruct-q4_k_m.gguf" }
+];
+let abortCtl = null;
+async function loadLib() {
+  for (const v of ["2.3.1", "2.3.0", "2.2.1", "2.1.3"]) {
+    const base = "https://cdn.jsdelivr.net/npm/@wllama/wllama@" + v + "/esm/";
+    try {
+      const mod = await import(base + "index.js");
+      return { Wllama: mod.Wllama, paths: { "single-thread/wllama.wasm": base + "single-thread/wllama.wasm", "multi-thread/wllama.wasm": base + "multi-thread/wllama.wasm" } };
+    } catch (e) {}
+  }
+  throw new Error("Could not load the CPU engine. An internet connection is needed for the first start, and ad or privacy blockers can get in the way.");
+}
+async function init() {
+  try { webllm = await loadLib(); } catch (e) { setStatus("bad", e.message); $("model").innerHTML = "<option>Not available</option>"; return; }
+  const sel = $("model"); sel.innerHTML = "";
+  MODELS.forEach((m, i) => { const o = el("option", "", m.name); o.value = i; sel.appendChild(o); });
+  let saved = null; try { saved = localStorage.getItem("browseragent-cpu-model"); } catch (e) {}
+  sel.value = saved != null && MODELS[+saved] ? saved : "1"; sel.disabled = false; $("load").disabled = false;
+  let reachable = true; try { await fetch("https://huggingface.co/", { mode: "no-cors" }); } catch (e) { reachable = false; }
+  if (!reachable) { setStatus("bad", "This page can’t reach the model download site (huggingface.co). That happens when there is no internet, when an ad or privacy blocker is in the way, or when the page runs inside a hosted viewer such as a Claude artifact. Save the file and open it from your computer."); return; }
+  setStatus("", "Pick a model and press Download and start.");
+}
+async function loadModel() {
+  const idx = +$("model").value, m = MODELS[idx]; $("model").disabled = true; $("load").disabled = true; setStatus("", "Starting…");
+  try {
+    const w = new webllm.Wllama(webllm.paths);
+    await w.loadModelFromHF(m.repo, m.file, { n_ctx: 4096, progressCallback: ({ loaded, total }) => { const p = total ? loaded / total : 0; $("bar").style.width = Math.round(p * 100) + "%"; setStatus("", "Downloading " + m.file + ": " + Math.round(p * 100) + "%"); } });
+    engine = w;
+    try { localStorage.setItem("browseragent-cpu-model", String(idx)); } catch (e) {}
+    $("bar").style.width = "100%"; setStatus("ok", "Ready. The model is running on your processor."); $("in").disabled = false; $("send").disabled = false; $("in").placeholder = "Paste code or ask for something. Shift+Enter adds a new line."; $("in").focus();
+  } catch (e) { engine = null; $("model").disabled = false; $("load").disabled = false; const msg = String((e && e.message) || e);
+    setStatus("bad", "Could not start this model: " + msg + " Try a smaller one, or check your internet connection."); }
+}
+$("load").onclick = loadModel;
+
+/* ---- sandbox: throwaway Worker, 5 second limit ---- */
+const WORKER_SRC = `
+self.fetch = self.XMLHttpRequest = self.WebSocket = self.importScripts = undefined;
+self.onmessage = async (e) => {
+  const logs = [];
+  const fmt = (a) => a.map((x) => { if (typeof x === "string") return x; try { return JSON.stringify(x); } catch (_) { return String(x); } }).join(" ");
+  self.console = { log: (...a) => logs.push(fmt(a)), info: (...a) => logs.push(fmt(a)), warn: (...a) => logs.push("WARN: " + fmt(a)), error: (...a) => logs.push("ERROR: " + fmt(a)) };
+  try { const AF = Object.getPrototypeOf(async function () {}).constructor; const r = await new AF(e.data)(); self.postMessage({ ok: true, logs, ret: r === undefined ? undefined : fmt([r]) }); }
+  catch (err) { self.postMessage({ ok: false, logs, error: String((err && err.stack) || err) }); }
+};`;
+function runJS(src) {
+  return new Promise((res) => {
+    let w;
+    try { w = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: "text/javascript" }))); }
+    catch (e) { res({ ok: false, logs: [], error: "The code sandbox could not start in this browser: " + e.message }); return; }
+    const t = setTimeout(() => { w.terminate(); res({ ok: false, logs: [], error: "Timed out after 5 seconds. There may be an infinite loop." }); }, 5000);
+    w.onmessage = (e) => { clearTimeout(t); w.terminate(); res(e.data); };
+    w.onerror = (e) => { clearTimeout(t); w.terminate(); res({ ok: false, logs: [], error: String(e.message || "Worker error") }); };
+    w.postMessage(src);
+  });
+}
+const fmtResult = (r) => ([(r.logs || []).join("\n"), r.ret != null ? "returned: " + r.ret : "", r.error ? "Error: " + r.error : ""].filter(Boolean).join("\n") || "(no output)").slice(0, 2500);
+
+function renderAnswer(box, text) {
+  const parts = text.split(/```(\w*)\n?([\s\S]*?)```/g);
+  for (let i = 0; i < parts.length; i += 3) {
+    if (parts[i].trim()) box.appendChild(el("div", "ans", parts[i].trim()));
+    if (i + 2 < parts.length) box.appendChild(el("pre", "", parts[i + 2].replace(/\n$/, "")));
+  }
+}
+function addStep(box, s) {
+  if (s.t === "note") box.appendChild(el("div", "note", s.text));
+  else { const d = el("details", "run" + (s.r.ok ? "" : " bad")); d.appendChild(el("summary", "", "Ran code, " + (s.r.ok ? "finished" : "hit an error"))); d.appendChild(el("pre", "", s.code + "\n\n→ " + fmtResult(s.r))); box.appendChild(d); }
+}
+const down = () => scrollTo({ top: document.body.scrollHeight });
+
+/* ---- generation: streams text, and stops as soon as a run block is complete ---- */
+const sz = (m) => m.reduce((n, x) => n + x.content.length, 0);
+function fit(msgs, anchor) {
+  let m = msgs.slice(), a = anchor;
+  while (a > 0 && sz(m) > 6500) { m.shift(); a--; }
+  while (a > 0 && m[0].role !== "user") { m.shift(); a--; }
+  if (sz(m) > 6500) m = m.map((x, i) => i === a ? { ...x, content: x.content.slice(0, 4000) } : x);
+  return m;
+}
+async function gen(messages, onText) {
+  let out = ""; abortCtl = new AbortController();
+  try {
+    const stream = await engine.createChatCompletion(messages, { nPredict: 1000, sampling: { temp: 0.2 }, stream: true, abortSignal: abortCtl.signal });
+    for await (const ch of stream) {
+      out = ch.currentText; onText(out);
+      if (stopFlag || (code && RUN.test(out))) { abortCtl.abort(); break; }
+    }
+  } catch (e) { if (!abortCtl.signal.aborted) throw e; }
+  return out;
+}
+
+async function send(text) {
+  const q = (text ?? $("in").value).trim();
+  if (!q || busy) return;
+  if (!engine) { setStatus("bad", "Load a model first: pick one above and press Download and start."); scrollTo({ top: 0, behavior: "smooth" }); return; }
+  busy = true; stopFlag = false; $("hint")?.remove(); $("in").value = ""; $("send").textContent = "■";
+  const log = $("log"); log.appendChild(el("div", "u", q));
+  const turn = el("div"); log.appendChild(turn); const status = el("div", "busy", "Thinking…"); log.appendChild(status); down();
+  const system = { role: "system", content: "You are a careful coding agent running inside a browser. " + (code
+    ? "To test JavaScript, write ONE code block that starts with ```run and ends with ``` and then stop writing. You will receive its output in the next message. Use console.log to show results. After you see the output, fix any problems and test again if needed. When everything works, give a concise final answer with the final code in a normal ```js block (never ```run) and say how you checked it. You can only run JavaScript; for other languages, reason carefully and say the code is untested. "
+    : "You cannot run code, so reason carefully and say your code is untested. ") + "When analyzing a bug, find the root cause first. Keep answers short." };
+  let msgs = [...api, { role: "user", content: q }], final = "", anchor = api.length;
+  try {
+    for (let i = 0; i < MAX_STEPS && !stopFlag; i++) {
+      const live = el("div", "ans"); turn.appendChild(live);
+      let out = await gen([system, ...fit(msgs, anchor)], (t) => { live.textContent = t; down(); });
+      live.remove();
+      const m = code && out.match(RUN);
+      if (m) {
+        out = out.slice(0, m.index + m[0].length); msgs = [...msgs, { role: "assistant", content: out }];
+        const before = out.slice(0, m.index).trim(); if (before) addStep(turn, { t: "note", text: before });
+        const r = await runJS(m[1]); addStep(turn, { t: "code", code: m[1], r });
+        msgs = [...msgs, { role: "user", content: "Output of your run block:\n" + fmtResult(r) + "\nIf there are problems, fix them and test again. If everything works, give your final answer." }];
+        status.textContent = "Thinking…"; down();
+      } else { final = out.trim() || "The model returned nothing. Try asking again."; msgs = [...msgs, { role: "assistant", content: final }]; break; }
+    }
+    if (!final) { final = "I stopped before finishing. Ask me to continue."; msgs = [...msgs, { role: "assistant", content: final }]; }
+    const keep = msgs.slice(-12); while (keep.length && keep[0].role !== "user") keep.shift(); api = keep; renderAnswer(turn, final);
+  } catch (e) { log.appendChild(el("div", "err", ((e && e.message) || "Something went wrong.") + "\nIf the conversation got long, reload the page to start fresh.")); }
+  status.remove(); busy = false; $("send").textContent = "↑"; down();
+}
+$("send").onclick = () => { if (busy) { stopFlag = true; abortCtl && abortCtl.abort(); } else send(); };
+$("in").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } };
+init();
+</script>
+</body>
+</html>
